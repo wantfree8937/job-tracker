@@ -1,0 +1,62 @@
+- generic [ref=e12]:
+  - banner [ref=e13]:
+    - heading "Job Tracker" [level=1] [ref=e14]
+    - button "로그아웃" [ref=e15] [cursor=pointer]
+  - main [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: 지원 예정
+        - generic [ref=e20]: "0"
+      - generic [ref=e21]:
+        - generic [ref=e22]: 지원함
+        - generic [ref=e23]: "1"
+      - generic [ref=e24]:
+        - generic [ref=e25]: 면접
+        - generic [ref=e26]: "0"
+      - generic [ref=e27]:
+        - generic [ref=e28]: 합격
+        - generic [ref=e29]: "1"
+      - generic [ref=e30]:
+        - generic [ref=e31]: 불합격
+        - generic [ref=e32]: "0"
+    - generic [ref=e33]:
+      - textbox "회사명 또는 포지션 검색" [ref=e34]
+      - generic [ref=e35]:
+        - button "전체" [ref=e36] [cursor=pointer]
+        - button "지원 예정" [ref=e37] [cursor=pointer]
+        - button "지원함" [ref=e38] [cursor=pointer]
+        - button "면접" [ref=e39] [cursor=pointer]
+        - button "합격" [ref=e40] [cursor=pointer]
+        - button "불합격" [ref=e41] [cursor=pointer]
+      - button "공고 추가" [ref=e42] [cursor=pointer]
+    - generic [ref=e43]:
+      - article [ref=e44]:
+        - generic [ref=e45]:
+          - heading "토스" [level=3] [ref=e46]
+          - generic [ref=e47]: 합격
+        - paragraph [ref=e48]: 프론트엔드 개발자
+        - generic [ref=e49]:
+          - combobox [ref=e50]:
+            - option "지원 예정"
+            - option "지원함"
+            - option "면접"
+            - option "합격" [selected]
+            - option "불합격"
+          - button "수정" [ref=e51] [cursor=pointer]
+          - button "삭제" [ref=e52] [cursor=pointer]
+      - article [ref=e53]:
+        - generic [ref=e54]:
+          - heading "카카오" [level=3] [ref=e55]
+          - generic [ref=e56]: 지원함
+        - paragraph [ref=e57]: 안드로이드 개발자
+        - paragraph [ref=e58]: "마감일: 2026-09-30"
+        - paragraph [ref=e59]: 자소서 제출 완료
+        - generic [ref=e60]:
+          - combobox [ref=e61]:
+            - option "지원 예정"
+            - option "지원함" [selected]
+            - option "면접"
+            - option "합격"
+            - option "불합격"
+          - button "수정" [ref=e62] [cursor=pointer]
+          - button "삭제" [ref=e63] [cursor=pointer]

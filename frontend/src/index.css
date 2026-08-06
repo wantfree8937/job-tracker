@@ -1,0 +1,53 @@
+:root {
+  --text: #4b5563;
+  --text-h: #111827;
+  --bg: #f8f9fb;
+  --surface: #fff;
+  --border: #e5e7eb;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --danger: #dc2626;
+
+  --wish-bg: #f3f4f6;
+  --wish-text: #4b5563;
+  --applied-bg: #dbeafe;
+  --applied-text: #1d4ed8;
+  --interview-bg: #ffedd5;
+  --interview-text: #c2410c;
+  --offer-bg: #dcfce7;
+  --offer-text: #15803d;
+  --rejected-bg: #fee2e2;
+  --rejected-text: #b91c1c;
+
+  font: 16px/150% system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--text-h);
+  font-weight: 600;
+  margin: 0;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
