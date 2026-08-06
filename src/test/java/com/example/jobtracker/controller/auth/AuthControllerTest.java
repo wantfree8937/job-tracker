@@ -103,4 +103,11 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("me@test.com"));
     }
+
+    // ⑦ 위조 토큰으로 /me 접근 시 401 (보안: 변조된 토큰 거부)
+    @Test
+    void meWithForgedTokenTest() throws Exception {
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer fake.token.value"))
+                .andExpect(status().isUnauthorized());
+    }
 }

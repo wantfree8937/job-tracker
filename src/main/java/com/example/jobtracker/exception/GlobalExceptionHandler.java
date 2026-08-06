@@ -6,7 +6,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import lombok.extern.slf4j.Slf4j;
+
 /** 컨트롤러에서 발생한 예외를 한 곳에서 공통 형식(ErrorResponse)으로 응답한다. */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -32,9 +35,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.of(e.getMessage()));
     }
 
-    // 그 외 서버 오류 (500)
+    // 그 외 서버 오류 (500) — 스택 트레이스를 로그에 남겨야 원인 추적 가능
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
+        log.error("예상치 못한 서버 오류 발생", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ErrorResponse.of("서버 내부 오류가 발생했습니다"));
     }
