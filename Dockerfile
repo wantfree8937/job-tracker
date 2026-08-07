@@ -31,6 +31,9 @@ RUN mvn package -DskipTests -B
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
+# 채용공고 크롤링이 curl 실행 방식이라 필수 (temurin 기본 이미지엔 curl 없음)
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
