@@ -22,6 +22,9 @@ RUN mvn dependency:go-offline -B
 # 프론트 빌드 결과물을 Spring Boot static 경로에 복사 (jar에 포함 → 루트로 서빙)
 COPY src ./src
 COPY --from=frontend /app/frontend/dist ./src/main/resources/static
+# application.yml은 gitignored라 저장소에 없음 → 예제(환경변수 기반)를 복사
+# (시크릿은 커밋하지 않고 JWT_SECRET/DB_* 환경변수로만 주입)
+COPY src/main/resources/application.example.yml src/main/resources/application.yml
 RUN mvn package -DskipTests -B
 
 # ---- 3단계: 실행 이미지 (경량화) ----
