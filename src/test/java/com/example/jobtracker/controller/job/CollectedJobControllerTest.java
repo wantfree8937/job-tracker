@@ -72,7 +72,11 @@ class CollectedJobControllerTest {
     }
 
     private void writeAlerts(String json) throws Exception {
-        Files.createDirectories(DATA_FILE.getParent());
+        // CI(Linux)에서는 하드코딩된 윈도우 경로가 구분자 없는 단일 세그먼트로 해석돼 getParent()가 null → 그때만 스킵
+        Path parent = DATA_FILE.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
         Files.writeString(DATA_FILE, json);
     }
 
