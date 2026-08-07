@@ -58,7 +58,9 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
       try {
         const results = await Promise.all(newKeywords.map((k) => searchJobs(k)))
         const totalCollected = results.reduce((sum, r) => sum + r.collected, 0)
-        onSaved(user.keywords, `${newKeywords.join(', ')} 공고 ${totalCollected}건을 가져왔어요!`)
+        const totalSkipped = results.reduce((sum, r) => sum + r.skipped, 0)
+        const skippedText = totalSkipped > 0 ? ` · 이미 ${totalSkipped}건 등록돼 있어요` : ''
+        onSaved(user.keywords, `${newKeywords.join(', ')} 공고 ${totalCollected}건을 가져왔어요!${skippedText}`)
       } catch (searchErr) {
         onSaved(user.keywords, searchErr instanceof Error ? searchErr.message : '공고 검색에 실패했습니다.')
       }
@@ -120,7 +122,7 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
             저장
           </button>
           <button type="button" className="primary-button" onClick={() => handleSave(true)} disabled={isSearching}>
-            {isSearching ? '공고 불러오는 중...' : '저장하고 공고 불러오기'}
+            {isSearching ? '공고 불러오는 중...' : '키워드로 공고 찾기'}
           </button>
         </div>
       </div>
