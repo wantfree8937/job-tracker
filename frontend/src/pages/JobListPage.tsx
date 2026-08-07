@@ -3,6 +3,7 @@ import Header from '../components/Header'
 import StatusBadge from '../components/StatusBadge'
 import JobFormModal from '../components/JobFormModal'
 import KeywordsModal from '../components/KeywordsModal'
+import ConfirmModal from '../components/ConfirmModal'
 import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me } from '../api'
 import { ALL_STATUSES, STATUS_LABEL, type ApplicationStatus, type JobPosting, type JobStats, type CollectedJob } from '../types'
 
@@ -32,6 +33,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null)
   const [error, setError] = useState('')
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
 
   const [collectedJobs, setCollectedJobs] = useState<CollectedJob[]>([])
   const [collectedKeyword, setCollectedKeyword] = useState('')
@@ -44,6 +46,31 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [keywords, setKeywords] = useState<string[]>([])
   const [isKeywordsModalOpen, setIsKeywordsModalOpen] = useState(false)
   const [keywordsMessage, setKeywordsMessage] = useState('')
+
+  // 메시지는 3초 후 자동으로 사라진다 (새 메시지가 오면 이전 타이머는 취소)
+  useEffect(() => {
+    if (!error) return
+    const timer = setTimeout(() => setError(''), 3000)
+    return () => clearTimeout(timer)
+  }, [error])
+
+  useEffect(() => {
+    if (!collectedError) return
+    const timer = setTimeout(() => setCollectedError(''), 3000)
+    return () => clearTimeout(timer)
+  }, [collectedError])
+
+  useEffect(() => {
+    if (!collectedMessage) return
+    const timer = setTimeout(() => setCollectedMessage(''), 3000)
+    return () => clearTimeout(timer)
+  }, [collectedMessage])
+
+  useEffect(() => {
+    if (!keywordsMessage) return
+    const timer = setTimeout(() => setKeywordsMessage(''), 3000)
+    return () => clearTimeout(timer)
+  }, [keywordsMessage])
 
   const loadJobs = useCallback(async () => {
     try {
@@ -95,9 +122,14 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     refresh()
   }
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('이 공고를 삭제하시겠습니까?')) return
-    await deleteJob(id)
+  const handleDelete = (id: number) => {
+    setDeleteTargetId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (deleteTargetId === null) return
+    await deleteJob(deleteTargetId)
+    setDeleteTargetId(null)
     refresh()
   }
 
@@ -119,6 +151,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         mine: mineOnly || undefined,
       })
       setCollectedJobs(data)
+      setScrapedIds(new Set(data.filter((j) => j.scrapedByMe).map((j) => j.id)))
     } catch (err) {
       setCollectedError(err instanceof Error ? err.message : '수집 공고를 불러오지 못했습니다.')
     }
@@ -243,23 +276,25 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                   <p className="job-position">{job.position}</p>
                   {job.deadline && <p className="job-deadline">마감일: {job.deadline}</p>}
                   {job.memo && <p className="job-memo">{job.memo}</p>}
-                  <div className="job-card-actions">
-                    <select
-                      value={job.status}
-                      onChange={(e) => handleStatusChange(job, e.target.value as ApplicationStatus)}
-                    >
-                      {ALL_STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {STATUS_LABEL[status]}
-                        </option>
-                      ))}
-                    </select>
-                    <button type="button" className="outline-button" onClick={() => openEditModal(job)}>
-                      수정
-                    </button>
-                    <button type="button" className="danger-button" onClick={() => handleDelete(job.id)}>
-                      삭제
-                    </button>
+                  <div className="job-card-footer">
+                    <div className="job-card-actions">
+                      <select
+                        value={job.status}
+                        onChange={(e) => handleStatusChange(job, e.target.value as ApplicationStatus)}
+                      >
+                        {ALL_STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {STATUS_LABEL[status]}
+                          </option>
+                        ))}
+                      </select>
+                      <button type="button" className="outline-button" onClick={() => openEditModal(job)}>
+                        수정
+                      </button>
+                      <button type="button" className="danger-button" onClick={() => handleDelete(job.id)}>
+                        삭제
+                      </button>
+                    </div>
                   </div>
                 </article>
               ))}
@@ -336,18 +371,20 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                       <span className={`badge ${SOURCE_CLASS[job.source] ?? 'badge-wish'}`}>{job.source}</span>
                     </div>
                     <p className="job-position">{job.title}</p>
-                    <a href={job.url} target="_blank" rel="noreferrer" className="job-link">
-                      {job.url}
-                    </a>
-                    <div className="job-card-actions">
-                      <button
-                        type="button"
-                        className="primary-button"
-                        disabled={scraped}
-                        onClick={() => handleScrap(job.id)}
-                      >
-                        {scraped ? '✓ 스크랩 완료' : '스크랩'}
-                      </button>
+                    <div className="job-card-footer">
+                      <a href={job.url} target="_blank" rel="noreferrer" className="job-link">
+                        {job.url}
+                      </a>
+                      <div className="job-card-actions">
+                        <button
+                          type="button"
+                          className="primary-button"
+                          disabled={scraped}
+                          onClick={() => handleScrap(job.id)}
+                        >
+                          {scraped ? '✓ 스크랩 완료' : '스크랩'}
+                        </button>
+                      </div>
                     </div>
                   </article>
                 )
@@ -375,6 +412,13 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
           onSaved={handleKeywordsSaved}
         />
       )}
+
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        message="이 공고를 삭제하시겠습니까?"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   )
 }

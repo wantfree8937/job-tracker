@@ -341,6 +341,10 @@
   margin: 0;
 }
 
+.job-card-footer {
+  margin-top: auto;
+}
+
 .job-card-actions {
   display: flex;
   align-items: center;

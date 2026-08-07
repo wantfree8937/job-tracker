@@ -3,6 +3,7 @@ package com.example.jobtracker.service.job;
 import com.example.jobtracker.dto.job.*;
 import com.example.jobtracker.entity.job.ApplicationStatus;
 import com.example.jobtracker.entity.job.CollectedJob;
+import com.example.jobtracker.entity.job.JobPosting;
 import com.example.jobtracker.entity.user.User;
 import com.example.jobtracker.exception.InvalidCredentialsException;
 import com.example.jobtracker.exception.JobAlreadyScrapedException;
@@ -25,6 +26,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -91,9 +94,19 @@ public class CollectedJobService {
             }
         }
 
+        Set<String> myScrapedUrls = getMyScrapedUrls(email);
+
         return jobs.stream()
-                .map(CollectedJobResponse::from)
+                .map(job -> CollectedJobResponse.from(job, myScrapedUrls.contains(job.getUrl())))
                 .toList();
+    }
+
+    // 로그인 사용자가 이미 스크랩한 공고의 url 목록 (scrap 중복 검사와 동일하게 link 기준)
+    private Set<String> getMyScrapedUrls(String email) {
+        Long userId = getUserId(email);
+        return jobPostingRepository.findByUserId(userId).stream()
+                .map(JobPosting::getLink)
+                .collect(Collectors.toSet());
     }
 
     // 관심 키워드 중 하나라도 제목/회사명에 포함되는지 확인 (대소문자 무시)

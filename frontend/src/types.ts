@@ -63,6 +63,7 @@ export interface CollectedJob {
   source: string
   jobKey: string
   createdAt: string
+  scrapedByMe: boolean
 }
 
 // 링크 미리보기 결과 (못 찾은 필드는 null)

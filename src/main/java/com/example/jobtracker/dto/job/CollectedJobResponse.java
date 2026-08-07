@@ -12,9 +12,10 @@ public record CollectedJobResponse(
         String url,
         String source,
         String jobKey,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        boolean scrapedByMe
 ) {
-    public static CollectedJobResponse from(CollectedJob job) {
+    public static CollectedJobResponse from(CollectedJob job, boolean scrapedByMe) {
         return new CollectedJobResponse(
                 job.getId(),
                 job.getCompany(),
@@ -22,7 +23,8 @@ public record CollectedJobResponse(
                 job.getUrl(),
                 job.getSource(),
                 job.getJobKey(),
-                job.getCreatedAt()
+                job.getCreatedAt(),
+                scrapedByMe
         );
     }
 }

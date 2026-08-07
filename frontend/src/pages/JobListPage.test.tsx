@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import JobListPage from './JobListPage'
 import type { JobPosting } from '../types'
@@ -128,6 +128,81 @@ describe('JobListPage', () => {
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('mine=true'), expect.anything()),
+    )
+  })
+
+  it('scrapedByMe가 true인 수집 공고는 새로고침 후에도 스크랩 완료 상태로 표시된다', async () => {
+    const user = userEvent.setup()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/stats')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+        }
+        if (url.includes('/jobs/collected')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => [
+              {
+                id: 1,
+                company: '토스',
+                title: '백엔드 개발자',
+                url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/1',
+                source: '잡코리아',
+                jobKey: '잡코리아:1',
+                createdAt: '2026-01-01T00:00:00Z',
+                scrapedByMe: true,
+              },
+            ],
+          })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+      }),
+    )
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: '전체 공고' }))
+
+    await waitFor(() => expect(screen.getByText('✓ 스크랩 완료')).toBeInTheDocument())
+  })
+
+  it('삭제 버튼을 누르면 확인 모달이 뜨고, 확인해야 삭제 요청이 전송된다', async () => {
+    const user = userEvent.setup()
+
+    const fetchMock = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+      if (url.includes('/jobs/stats')) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+      }
+      if (url.match(/\/jobs\/1$/) && options?.method === 'DELETE') {
+        return Promise.resolve({ ok: true, status: 204, json: async () => undefined })
+      }
+      return Promise.resolve({ ok: true, status: 200, json: async () => [jobA, jobB] })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await waitFor(() => expect(screen.getByText('카카오')).toBeInTheDocument())
+
+    await user.click(screen.getAllByRole('button', { name: '삭제' })[0])
+
+    const message = screen.getByText('이 공고를 삭제하시겠습니까?')
+    expect(message).toBeInTheDocument()
+    expect(
+      fetchMock.mock.calls.some(([, options]) => (options as RequestInit | undefined)?.method === 'DELETE'),
+    ).toBe(false)
+
+    const modal = message.closest('.modal') as HTMLElement
+    await user.click(within(modal).getByRole('button', { name: '삭제' }))
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/jobs/1'),
+        expect.objectContaining({ method: 'DELETE' }),
+      ),
     )
   })
 })

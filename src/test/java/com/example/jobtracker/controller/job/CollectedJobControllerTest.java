@@ -170,6 +170,35 @@ class CollectedJobControllerTest {
                 .andExpect(status().isConflict());
     }
 
+    // ⑤-1 스크랩한 공고는 scrapedByMe=true, 안 한 공고는 false
+    @Test
+    void scrapedByMeFlagTest() throws Exception {
+        String token = signUpAndLogin("scraped-flag@test.com");
+        String scrapedTitle = "스크랩됨-" + UUID.randomUUID();
+        String notScrapedTitle = "스크랩안됨-" + UUID.randomUUID();
+        writeAlerts("""
+                [{"company":"라인","title":"%s","url":"https://line.me/2","source":"잡코리아","jobKey":"test:%s"},
+                 {"company":"라인","title":"%s","url":"https://line.me/3","source":"잡코리아","jobKey":"test:%s"}]
+                """.formatted(scrapedTitle, UUID.randomUUID(), notScrapedTitle, UUID.randomUUID()));
+        mockMvc.perform(post("/api/jobs/collected/load").header("Authorization", "Bearer " + token));
+
+        String listResponse = mockMvc.perform(get("/api/jobs/collected").param("keyword", scrapedTitle)
+                        .header("Authorization", "Bearer " + token))
+                .andReturn().getResponse().getContentAsString();
+        Long id = objectMapper.readTree(listResponse).get(0).get("id").asLong();
+        mockMvc.perform(post("/api/jobs/collected/" + id + "/scrap").header("Authorization", "Bearer " + token));
+
+        mockMvc.perform(get("/api/jobs/collected").param("keyword", scrapedTitle)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].scrapedByMe").value(true));
+
+        mockMvc.perform(get("/api/jobs/collected").param("keyword", notScrapedTitle)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].scrapedByMe").value(false));
+    }
+
     // ⑥ SSRF 차단: localhost 접근 시 400
     @Test
     void previewLocalhostBlockedTest() throws Exception {

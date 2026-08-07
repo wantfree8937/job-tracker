@@ -32,8 +32,7 @@ public class CollectedJobController {
                                                                  @RequestParam(required = false) String keyword,
                                                                  @RequestParam(required = false) String source,
                                                                  @RequestParam(required = false, defaultValue = "false") boolean mine) {
-        String email = mine ? authentication.getName() : null;
-        return ResponseEntity.ok(collectedJobService.findAll(keyword, source, mine, email));
+        return ResponseEntity.ok(collectedJobService.findAll(keyword, source, mine, authentication.getName()));
     }
 
     // 수집 공고를 내 공고로 스크랩
