@@ -30,6 +30,10 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
   return (
     <div className="auth-page">
       <form className="auth-form" onSubmit={handleSubmit}>
+        <div className="auth-brand">
+          <h1>Job Tracker</h1>
+          <p>채용 공고 지원을 한눈에</p>
+        </div>
         <h2>{isSignup ? '회원가입' : '로그인'}</h2>
         {error && <p className="error-message">{error}</p>}
         <label>

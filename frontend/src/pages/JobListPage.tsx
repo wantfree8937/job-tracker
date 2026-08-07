@@ -5,6 +5,15 @@ import JobFormModal from '../components/JobFormModal'
 import { getJobs, getStats, updateJob, deleteJob } from '../api'
 import { ALL_STATUSES, STATUS_LABEL, type ApplicationStatus, type JobPosting, type JobStats } from '../types'
 
+// 상태별 통계 카드 이모지
+const STATUS_ICON: Record<ApplicationStatus, string> = {
+  WISH: '📋',
+  APPLIED: '✉️',
+  INTERVIEW: '🎤',
+  OFFER: '🎉',
+  REJECTED: '❌',
+}
+
 export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [jobs, setJobs] = useState<JobPosting[]>([])
   const [stats, setStats] = useState<JobStats>({})
@@ -79,6 +88,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         <section className="stats">
           {ALL_STATUSES.map((status) => (
             <div key={status} className="stat-card">
+              <span className="stat-icon">{STATUS_ICON[status]}</span>
               <span className="stat-label">{STATUS_LABEL[status]}</span>
               <span className="stat-count">{stats[status] ?? 0}</span>
             </div>
@@ -86,13 +96,15 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         </section>
 
         <section className="toolbar">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="회사명 또는 포지션 검색"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-          />
+          <div className="search-wrapper">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="회사명 또는 포지션 검색"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+            />
+          </div>
           <div className="status-filters">
             <button
               type="button"
@@ -141,7 +153,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                     </option>
                   ))}
                 </select>
-                <button type="button" onClick={() => openEditModal(job)}>
+                <button type="button" className="outline-button" onClick={() => openEditModal(job)}>
                   수정
                 </button>
                 <button type="button" className="danger-button" onClick={() => handleDelete(job.id)}>

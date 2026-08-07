@@ -1,22 +1,44 @@
 /* 공통 버튼 */
 .primary-button {
-  background: var(--accent);
+  background: var(--gradient-brand);
   color: #fff;
   border: none;
-  border-radius: 6px;
-  padding: 10px 16px;
-  font-weight: 500;
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-weight: 600;
+  transition: filter 0.2s, transform 0.1s;
 }
 .primary-button:hover {
-  background: var(--accent-hover);
+  filter: brightness(1.08);
+}
+.primary-button:active {
+  transform: scale(0.97);
+}
+
+.outline-button {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.outline-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .danger-button {
   background: #fff;
   color: var(--danger);
   border: 1px solid var(--danger);
-  border-radius: 6px;
-  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  transition: background 0.2s, color 0.2s;
+}
+.danger-button:hover {
+  background: var(--danger);
+  color: #fff;
 }
 
 .link-button {
@@ -30,15 +52,15 @@
 .error-message {
   color: var(--danger);
   background: var(--rejected-bg);
-  border-radius: 6px;
-  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
   margin: 0 0 12px;
 }
 
 .empty-message {
   color: var(--text);
   text-align: center;
-  padding: 32px;
+  padding: 40px;
 }
 
 /* 헤더 */
@@ -46,15 +68,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 18px 32px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+}
+.header h1 {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 22px;
 }
 .header button {
   background: none;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  transition: border-color 0.2s, color 0.2s;
+}
+.header button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* 로그인/회원가입 페이지 */
@@ -63,65 +97,103 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6 55%, #d946ef);
 }
 
 .auth-form {
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 32px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 40px 36px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+  animation: scale-in 0.3s ease;
+}
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 4px;
+}
+.auth-brand h1 {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 26px;
+}
+.auth-brand p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--text);
 }
 
 .auth-form label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   font-size: 14px;
+  color: var(--text-h);
+  font-weight: 500;
 }
 
 .auth-form input {
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 /* 공고 목록 페이지 */
 .content {
-  max-width: 960px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
+  animation: fade-in 0.3s ease;
 }
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
 }
 
 .stat-card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+.stat-icon {
+  font-size: 20px;
 }
 .stat-label {
   font-size: 13px;
   color: var(--text);
+  font-weight: 500;
 }
 .stat-count {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
   color: var(--text-h);
 }
 
@@ -132,11 +204,31 @@
   gap: 12px;
 }
 
+.search-wrapper {
+  position: relative;
+  flex: 1 1 240px;
+}
+.search-wrapper::before {
+  content: '🔍';
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.6;
+}
 .search-input {
-  flex: 1 1 220px;
-  padding: 10px 12px;
+  width: 100%;
+  padding: 11px 14px 11px 38px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 .status-filters {
@@ -149,30 +241,39 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 7px 16px;
   font-size: 14px;
   color: var(--text);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.chip:hover {
+  border-color: var(--accent);
 }
 .chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--gradient-brand);
+  border-color: transparent;
   color: #fff;
 }
 
 .job-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
 }
 
 .job-card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.job-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
 }
 
 .job-card-header {
@@ -181,9 +282,13 @@
   justify-content: space-between;
   gap: 8px;
 }
+.job-card-header h3 {
+  font-size: 17px;
+}
 
 .job-position {
-  color: var(--text);
+  color: var(--text-h);
+  font-weight: 500;
   margin: 0;
 }
 .job-deadline,
@@ -201,16 +306,17 @@
 }
 .job-card-actions select {
   flex: 1;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
 }
 
 /* 상태 배지 */
 .badge {
   display: inline-flex;
   border-radius: 999px;
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -240,44 +346,57 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(15, 23, 42, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
+  animation: fade-in 0.2s ease;
 }
 
 .modal {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   max-height: 90vh;
   overflow-y: auto;
   background: var(--surface);
-  border-radius: 10px;
-  padding: 24px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 28px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  animation: scale-in 0.2s ease;
 }
 
 .modal label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   font-size: 14px;
+  color: var(--text-h);
+  font-weight: 500;
 }
 
 .modal input,
 .modal select,
 .modal textarea {
-  padding: 8px 10px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 .modal textarea {
   resize: vertical;
-  min-height: 60px;
+  min-height: 70px;
 }
 
 .modal-actions {
@@ -285,10 +404,4 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 8px;
-}
-.modal-actions button {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 16px;
 }

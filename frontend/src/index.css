@@ -1,15 +1,17 @@
 :root {
-  --text: #4b5563;
-  --text-h: #111827;
-  --bg: #f8f9fb;
+  --text: #64748b;
+  --text-h: #0f172a;
+  --bg: #f8fafc;
   --surface: #fff;
   --border: #e5e7eb;
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
+  --accent: #6366f1;
+  --accent-2: #8b5cf6;
+  --accent-hover: #4f46e5;
   --danger: #dc2626;
+  --gradient-brand: linear-gradient(135deg, #6366f1, #8b5cf6);
 
-  --wish-bg: #f3f4f6;
-  --wish-text: #4b5563;
+  --wish-bg: #f1f5f9;
+  --wish-text: #475569;
   --applied-bg: #dbeafe;
   --applied-text: #1d4ed8;
   --interview-bg: #ffedd5;
@@ -19,7 +21,14 @@
   --rejected-bg: #fee2e2;
   --rejected-text: #b91c1c;
 
-  font: 16px/150% system-ui, 'Segoe UI', Roboto, sans-serif;
+  --radius-lg: 20px;
+  --radius-md: 16px;
+  --radius-sm: 10px;
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 24px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.14);
+
+  font: 16px/150% 'Pretendard', -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -37,7 +46,7 @@ h1,
 h2,
 h3 {
   color: var(--text-h);
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -50,4 +59,26 @@ button {
 
 button {
   cursor: pointer;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

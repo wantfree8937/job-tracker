@@ -84,7 +84,7 @@ export default function JobFormModal({ job, onClose, onSaved }: JobFormModalProp
           <textarea value={memo} onChange={(e) => setMemo(e.target.value)} />
         </label>
         <div className="modal-actions">
-          <button type="button" onClick={onClose}>
+          <button type="button" className="outline-button" onClick={onClose}>
             취소
           </button>
           <button type="submit" className="primary-button">
