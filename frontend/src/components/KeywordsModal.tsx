@@ -13,6 +13,7 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
   const [selected, setSelected] = useState<Set<string>>(new Set(currentKeywords))
   const [customInput, setCustomInput] = useState('')
   const [error, setError] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
 
   const toggle = (keyword: string) => {
     setSelected((prev) => {
@@ -44,6 +45,7 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
   const handleSave = async (withSearch: boolean) => {
     setError('')
     const keywords = Array.from(selected)
+    if (withSearch) setIsSearching(true)
     try {
       const user = await updateKeywords(keywords)
       const newKeywords = keywords.filter((k) => !currentKeywords.includes(k))
@@ -62,6 +64,8 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.')
+    } finally {
+      setIsSearching(false)
     }
   }
 
@@ -109,14 +113,14 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
         )}
 
         <div className="modal-actions">
-          <button type="button" className="outline-button" onClick={onClose}>
+          <button type="button" className="outline-button" onClick={onClose} disabled={isSearching}>
             취소
           </button>
-          <button type="button" className="outline-button" onClick={() => handleSave(false)}>
+          <button type="button" className="outline-button" onClick={() => handleSave(false)} disabled={isSearching}>
             저장
           </button>
-          <button type="button" className="primary-button" onClick={() => handleSave(true)}>
-            저장하고 공고 불러오기
+          <button type="button" className="primary-button" onClick={() => handleSave(true)} disabled={isSearching}>
+            {isSearching ? '공고 불러오는 중...' : '저장하고 공고 불러오기'}
           </button>
         </div>
       </div>

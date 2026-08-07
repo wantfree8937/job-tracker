@@ -151,7 +151,9 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         source: sourceFilter === 'ALL' ? undefined : sourceFilter,
         mine: mineOnly || undefined,
       })
-      setCollectedJobs(data)
+      // 스크랩한 공고는 이미 확인했으므로 목록 아래로 내린다 (createdAt DESC는 그대로 유지)
+      const sorted = [...data].sort((a, b) => Number(a.scrapedByMe) - Number(b.scrapedByMe))
+      setCollectedJobs(sorted)
       setScrapedIds(new Set(data.filter((j) => j.scrapedByMe).map((j) => j.id)))
     } catch (err) {
       setCollectedError(err instanceof Error ? err.message : '수집 공고를 불러오지 못했습니다.')
@@ -353,6 +355,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                   </button>
                 ))}
               </div>
+              <span className="sort-label">정렬: 최신 수집순</span>
               <button type="button" className="primary-button" onClick={handleLoadCollected}>
                 공고 불러오기
               </button>
@@ -370,7 +373,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               {collectedJobs.map((job) => {
                 const scraped = scrapedIds.has(job.id)
                 return (
-                  <article key={job.id} className="job-card">
+                  <article key={job.id} className={scraped ? 'job-card job-card-scraped' : 'job-card'}>
                     <div className="job-card-header">
                       <h3 title={job.company}>{job.company}</h3>
                       <span className={`badge ${SOURCE_CLASS[job.source] ?? 'badge-wish'}`}>{job.source}</span>

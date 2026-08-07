@@ -14,6 +14,11 @@
 .primary-button:active {
   transform: scale(0.97);
 }
+.primary-button:disabled,
+.outline-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .outline-button {
   background: var(--surface);
@@ -352,6 +357,15 @@
 .job-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
+}
+.job-card-scraped {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.sort-label {
+  font-size: 13px;
+  color: var(--text);
 }
 
 .job-card-header {
