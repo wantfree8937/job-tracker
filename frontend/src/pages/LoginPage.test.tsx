@@ -69,7 +69,7 @@ describe('LoginPage', () => {
   })
 
   it('회원가입 성공 시 로그인 화면으로 전환되고 안내 메시지를 보여준다', async () => {
-    vi.mocked(signup).mockResolvedValue({ id: 1, email: 'test@example.com', nickname: 'tester', createdAt: '2026-08-07' })
+    vi.mocked(signup).mockResolvedValue({ id: 1, email: 'test@example.com', nickname: 'tester', createdAt: '2026-08-07', keywords: [] })
     const user = userEvent.setup()
     render(<LoginPage onLogin={vi.fn()} />)
 

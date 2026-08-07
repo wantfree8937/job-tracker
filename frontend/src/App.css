@@ -118,6 +118,10 @@
   color: transparent;
   font-size: 22px;
 }
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
 .header button {
   background: none;
   border: 1px solid var(--border);

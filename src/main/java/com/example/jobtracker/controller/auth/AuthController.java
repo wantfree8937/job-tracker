@@ -1,5 +1,6 @@
 package com.example.jobtracker.controller.auth;
 
+import com.example.jobtracker.dto.auth.KeywordsRequest;
 import com.example.jobtracker.dto.auth.LoginRequest;
 import com.example.jobtracker.dto.auth.SignUpRequest;
 import com.example.jobtracker.dto.auth.TokenResponse;
@@ -32,5 +33,11 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserResponse> me(Authentication authentication) {
         return ResponseEntity.ok(authService.getMyInfo(authentication.getName()));
+    }
+
+    @PutMapping("/me/keywords")
+    public ResponseEntity<UserResponse> updateKeywords(Authentication authentication,
+                                                         @Valid @RequestBody KeywordsRequest request) {
+        return ResponseEntity.ok(authService.updateKeywords(authentication.getName(), request));
     }
 }

@@ -23,6 +23,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,15 +74,44 @@ public class CollectedJobService {
         return new CollectedJobLoadResult(loaded, skipped);
     }
 
-    // 수집 공고 목록 (keyword/source 필터, 최신 등록순)
+    // 수집 공고 목록 (keyword/source 필터 + mine=true일 때 내 관심 키워드로 추가 필터, 최신 등록순)
     @Transactional(readOnly = true)
-    public List<CollectedJobResponse> findAll(String keyword, String source) {
+    public List<CollectedJobResponse> findAll(String keyword, String source, boolean mine, String email) {
         String pattern = (keyword == null || keyword.isBlank()) ? null : "%" + keyword.trim().toLowerCase() + "%";
         String sourceFilter = (source == null || source.isBlank()) ? null : source.trim();
 
-        return collectedJobRepository.search(sourceFilter, pattern)
-                .stream()
+        List<CollectedJob> jobs = collectedJobRepository.search(sourceFilter, pattern);
+
+        if (mine) {
+            List<String> myKeywords = getMyKeywords(email);
+            if (!myKeywords.isEmpty()) {
+                jobs = jobs.stream()
+                        .filter(job -> matchesAnyKeyword(job, myKeywords))
+                        .toList();
+            }
+        }
+
+        return jobs.stream()
                 .map(CollectedJobResponse::from)
+                .toList();
+    }
+
+    // 관심 키워드 중 하나라도 제목/회사명에 포함되는지 확인 (대소문자 무시)
+    private boolean matchesAnyKeyword(CollectedJob job, List<String> keywords) {
+        String title = job.getTitle() == null ? "" : job.getTitle().toLowerCase();
+        String company = job.getCompany() == null ? "" : job.getCompany().toLowerCase();
+        return keywords.stream().anyMatch(k -> title.contains(k) || company.contains(k));
+    }
+
+    private List<String> getMyKeywords(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(InvalidCredentialsException::new);
+        String keywords = user.getKeywords();
+        if (keywords == null || keywords.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(keywords.split(","))
+                .map(String::toLowerCase)
                 .toList();
     }
 

@@ -195,4 +195,46 @@ class CollectedJobControllerTest {
                                 """))
                 .andExpect(status().isBadRequest());
     }
+
+    // ⑧ mine=true: 관심 키워드와 매칭되는 공고만 반환
+    @Test
+    void mineTrueFiltersByKeywordTest() throws Exception {
+        String token = signUpAndLogin("mine@test.com");
+        String uniqueCompany = "매칭회사-" + UUID.randomUUID();
+        String otherCompany = "무관회사-" + UUID.randomUUID();
+        writeAlerts("""
+                [{"company":"%s","title":"안드로이드 개발자","url":"https://mine.com/1","source":"잡코리아","jobKey":"test:%s"},
+                 {"company":"%s","title":"디자이너","url":"https://mine.com/2","source":"잡코리아","jobKey":"test:%s"}]
+                """.formatted(uniqueCompany, UUID.randomUUID(), otherCompany, UUID.randomUUID()));
+        mockMvc.perform(post("/api/jobs/collected/load").header("Authorization", "Bearer " + token));
+
+        mockMvc.perform(put("/api/auth/me/keywords")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"keywords":["안드로이드"]}
+                        """));
+
+        mockMvc.perform(get("/api/jobs/collected").param("mine", "true")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.company=='" + uniqueCompany + "')]").exists())
+                .andExpect(jsonPath("$[?(@.company=='" + otherCompany + "')]").doesNotExist());
+    }
+
+    // ⑨ mine=true + 키워드 미설정 시 전체 반환
+    @Test
+    void mineTrueWithoutKeywordsReturnsAllTest() throws Exception {
+        String token = signUpAndLogin("mine-empty@test.com");
+        String uniqueSource = "출처-" + UUID.randomUUID();
+        writeAlerts("""
+                [{"company":"아무회사","title":"아무직무","url":"https://mine-empty.com/1","source":"%s","jobKey":"test:%s"}]
+                """.formatted(uniqueSource, UUID.randomUUID()));
+        mockMvc.perform(post("/api/jobs/collected/load").header("Authorization", "Bearer " + token));
+
+        mockMvc.perform(get("/api/jobs/collected").param("mine", "true").param("source", uniqueSource)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
 }

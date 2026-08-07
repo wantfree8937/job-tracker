@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import Header from '../components/Header'
 import StatusBadge from '../components/StatusBadge'
 import JobFormModal from '../components/JobFormModal'
-import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob } from '../api'
+import KeywordsModal from '../components/KeywordsModal'
+import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me } from '../api'
 import { ALL_STATUSES, STATUS_LABEL, type ApplicationStatus, type JobPosting, type JobStats, type CollectedJob } from '../types'
 
 // 상태별 통계 카드 이모지
@@ -35,9 +36,14 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [collectedJobs, setCollectedJobs] = useState<CollectedJob[]>([])
   const [collectedKeyword, setCollectedKeyword] = useState('')
   const [sourceFilter, setSourceFilter] = useState<string>('ALL')
+  const [mineOnly, setMineOnly] = useState(false)
   const [scrapedIds, setScrapedIds] = useState<Set<number>>(new Set())
   const [collectedError, setCollectedError] = useState('')
   const [collectedMessage, setCollectedMessage] = useState('')
+
+  const [keywords, setKeywords] = useState<string[]>([])
+  const [isKeywordsModalOpen, setIsKeywordsModalOpen] = useState(false)
+  const [keywordsMessage, setKeywordsMessage] = useState('')
 
   const loadJobs = useCallback(async () => {
     try {
@@ -60,6 +66,14 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
       .then(setStats)
       .catch(() => {
         // 통계는 부가 정보이므로 실패해도 화면을 막지 않는다
+      })
+  }, [])
+
+  useEffect(() => {
+    me()
+      .then((user) => setKeywords(user.keywords ?? []))
+      .catch(() => {
+        // 관심 분야는 부가 정보이므로 실패해도 화면을 막지 않는다
       })
   }, [])
 
@@ -102,12 +116,13 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
       const data = await getCollectedJobs({
         keyword: collectedKeyword || undefined,
         source: sourceFilter === 'ALL' ? undefined : sourceFilter,
+        mine: mineOnly || undefined,
       })
       setCollectedJobs(data)
     } catch (err) {
       setCollectedError(err instanceof Error ? err.message : '수집 공고를 불러오지 못했습니다.')
     }
-  }, [collectedKeyword, sourceFilter])
+  }, [collectedKeyword, sourceFilter, mineOnly])
 
   useEffect(() => {
     if (tab === 'collected') loadCollected()
@@ -125,6 +140,13 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     }
   }
 
+  const handleKeywordsSaved = (newKeywords: string[]) => {
+    setKeywords(newKeywords)
+    setIsKeywordsModalOpen(false)
+    setKeywordsMessage('관심 분야를 저장했어요')
+    if (tab === 'collected' && mineOnly) loadCollected()
+  }
+
   const handleScrap = async (id: number) => {
     setCollectedError('')
     setCollectedMessage('')
@@ -139,8 +161,9 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="job-list-page">
-      <Header onLogout={onLogout} />
+      <Header onLogout={onLogout} onOpenKeywords={() => setIsKeywordsModalOpen(true)} />
       <main className="content">
+        {keywordsMessage && <p className="success-message">{keywordsMessage}</p>}
         <div className="tabs">
           <button type="button" className={tab === 'mine' ? 'tab active' : 'tab'} onClick={() => setTab('mine')}>
             내 공고
@@ -239,6 +262,23 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
 
         {tab === 'collected' && (
           <>
+            <div className="status-filters">
+              <button
+                type="button"
+                className={!mineOnly ? 'chip active' : 'chip'}
+                onClick={() => setMineOnly(false)}
+              >
+                전체 공고
+              </button>
+              <button
+                type="button"
+                className={mineOnly ? 'chip active' : 'chip'}
+                onClick={() => setMineOnly(true)}
+              >
+                내 관심 공고
+              </button>
+            </div>
+
             <section className="toolbar">
               <div className="search-wrapper">
                 <input
@@ -318,6 +358,14 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
             setEditingJob(null)
           }}
           onSaved={handleSaved}
+        />
+      )}
+
+      {isKeywordsModalOpen && (
+        <KeywordsModal
+          currentKeywords={keywords}
+          onClose={() => setIsKeywordsModalOpen(false)}
+          onSaved={handleKeywordsSaved}
         />
       )}
     </div>

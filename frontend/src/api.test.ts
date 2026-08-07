@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { login, getJobs, signup, createJob, updateJob, deleteJob, previewLink, scrapCollectedJob } from './api'
+import {
+  login,
+  getJobs,
+  signup,
+  createJob,
+  updateJob,
+  deleteJob,
+  previewLink,
+  scrapCollectedJob,
+  updateKeywords,
+  getCollectedJobs,
+} from './api'
 
 function mockFetchOnce(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
@@ -101,6 +112,36 @@ describe('api', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:8080/api/jobs/collected/5/scrap',
       expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('updateKeywords는 키워드 배열을 담아 PUT으로 요청한다', async () => {
+    const fetchMock = mockFetchOnce(200, {
+      id: 1,
+      email: 'test@example.com',
+      nickname: 'tester',
+      createdAt: '2026-08-07',
+      keywords: ['백엔드'],
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await updateKeywords(['백엔드'])
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/auth/me/keywords',
+      expect.objectContaining({ method: 'PUT', body: JSON.stringify({ keywords: ['백엔드'] }) }),
+    )
+  })
+
+  it('getCollectedJobs에 mine을 true로 넘기면 쿼리스트링에 mine=true가 포함된다', async () => {
+    const fetchMock = mockFetchOnce(200, [])
+    vi.stubGlobal('fetch', fetchMock)
+
+    await getCollectedJobs({ mine: true })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('mine=true'),
+      expect.anything(),
     )
   })
 })

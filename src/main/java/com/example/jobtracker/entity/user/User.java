@@ -31,4 +31,7 @@ public class User {
 
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    // 관심 분야 키워드, 콤마 구분 문자열로 저장 (예: "안드로이드,백엔드")
+    private String keywords;
 }

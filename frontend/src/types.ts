@@ -35,7 +35,21 @@ export interface User {
   email: string
   nickname: string
   createdAt: string
+  keywords: string[]
 }
+
+// 관심 분야 후보 목록
+export const KEYWORD_OPTIONS = [
+  '안드로이드',
+  'iOS',
+  '앱 개발',
+  '백엔드',
+  '프론트엔드',
+  '데이터 분석',
+  '서버',
+  '게임',
+  'AI',
+]
 
 // 상태별 개수 통계 (없는 상태는 응답에서 생략될 수 있음)
 export type JobStats = Partial<Record<ApplicationStatus, number>>

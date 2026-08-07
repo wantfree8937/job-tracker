@@ -110,4 +110,48 @@ class AuthControllerTest {
         mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer fake.token.value"))
                 .andExpect(status().isUnauthorized());
     }
+
+    // ⑧ 관심 키워드 설정 후 /me 조회 시 반영 확인
+    @Test
+    void updateKeywordsTest() throws Exception {
+        signUp("keywords@test.com");
+        String token = jwtUtil.generateToken("keywords@test.com");
+
+        mockMvc.perform(put("/api/auth/me/keywords")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"keywords":["안드로이드", "백엔드"]}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.keywords[0]").value("안드로이드"))
+                .andExpect(jsonPath("$.keywords[1]").value("백엔드"));
+
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.keywords.length()").value(2));
+    }
+
+    // ⑨ 빈 배열로 설정하면 관심 키워드 초기화
+    @Test
+    void updateKeywordsEmptyTest() throws Exception {
+        signUp("keywords-empty@test.com");
+        String token = jwtUtil.generateToken("keywords-empty@test.com");
+
+        mockMvc.perform(put("/api/auth/me/keywords")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"keywords":["안드로이드"]}
+                        """));
+
+        mockMvc.perform(put("/api/auth/me/keywords")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"keywords":[]}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.keywords.length()").value(0));
+    }
 }

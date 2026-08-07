@@ -24,11 +24,14 @@ public class CollectedJobController {
         return ResponseEntity.ok(collectedJobService.loadFromFile());
     }
 
-    // 수집 공고 전체 목록 (내 공고 목록과는 별개)
+    // 수집 공고 목록 (mine=true면 내 관심 키워드와 매칭되는 공고만)
     @GetMapping("/collected")
-    public ResponseEntity<List<CollectedJobResponse>> findAll(@RequestParam(required = false) String keyword,
-                                                                 @RequestParam(required = false) String source) {
-        return ResponseEntity.ok(collectedJobService.findAll(keyword, source));
+    public ResponseEntity<List<CollectedJobResponse>> findAll(Authentication authentication,
+                                                                 @RequestParam(required = false) String keyword,
+                                                                 @RequestParam(required = false) String source,
+                                                                 @RequestParam(required = false, defaultValue = "false") boolean mine) {
+        String email = mine ? authentication.getName() : null;
+        return ResponseEntity.ok(collectedJobService.findAll(keyword, source, mine, email));
     }
 
     // 수집 공고를 내 공고로 스크랩

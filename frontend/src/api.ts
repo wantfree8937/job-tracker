@@ -59,6 +59,10 @@ export function me(): Promise<User> {
   return request('/auth/me')
 }
 
+export function updateKeywords(keywords: string[]): Promise<User> {
+  return request('/auth/me/keywords', { method: 'PUT', body: JSON.stringify({ keywords }) })
+}
+
 export function getJobs(params: { status?: ApplicationStatus; keyword?: string } = {}): Promise<JobPosting[]> {
   const query = new URLSearchParams()
   if (params.status) query.set('status', params.status)
@@ -101,10 +105,13 @@ export function loadCollectedJobs(): Promise<CollectedJobLoadResult> {
   return request('/jobs/collected/load', { method: 'POST' })
 }
 
-export function getCollectedJobs(params: { keyword?: string; source?: string } = {}): Promise<CollectedJob[]> {
+export function getCollectedJobs(
+  params: { keyword?: string; source?: string; mine?: boolean } = {},
+): Promise<CollectedJob[]> {
   const query = new URLSearchParams()
   if (params.keyword) query.set('keyword', params.keyword)
   if (params.source) query.set('source', params.source)
+  if (params.mine) query.set('mine', 'true')
   const qs = query.toString()
   return request(`/jobs/collected${qs ? `?${qs}` : ''}`)
 }

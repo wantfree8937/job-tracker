@@ -1,5 +1,6 @@
 package com.example.jobtracker.service.auth;
 
+import com.example.jobtracker.dto.auth.KeywordsRequest;
 import com.example.jobtracker.dto.auth.LoginRequest;
 import com.example.jobtracker.dto.auth.SignUpRequest;
 import com.example.jobtracker.dto.auth.TokenResponse;
@@ -13,6 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -58,7 +62,42 @@ public class AuthService {
         return toResponse(user);
     }
 
+    // 관심 분야 키워드 설정 (trim, 빈 값 제거 후 콤마 문자열로 저장, 빈 배열이면 초기화)
+    @Transactional
+    public UserResponse updateKeywords(String email, KeywordsRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(InvalidCredentialsException::new);
+
+        List<String> normalized = normalizeKeywords(request.keywords());
+        user.setKeywords(normalized.isEmpty() ? null : String.join(",", normalized));
+        return toResponse(user);
+    }
+
+    private List<String> normalizeKeywords(List<String> keywords) {
+        if (keywords == null) {
+            return List.of();
+        }
+        List<String> normalized = keywords.stream()
+                .filter(k -> k != null && !k.isBlank())
+                .map(String::trim)
+                .toList();
+        for (String k : normalized) {
+            if (k.length() < 2 || k.length() > 20) {
+                throw new IllegalArgumentException("키워드는 2~20자여야 합니다");
+            }
+        }
+        return normalized;
+    }
+
     private UserResponse toResponse(User user) {
-        return new UserResponse(user.getId(), user.getEmail(), user.getNickname(), user.getCreatedAt());
+        return new UserResponse(user.getId(), user.getEmail(), user.getNickname(), user.getCreatedAt(),
+                parseKeywords(user.getKeywords()));
+    }
+
+    private List<String> parseKeywords(String keywords) {
+        if (keywords == null || keywords.isBlank()) {
+            return List.of();
+        }
+        return Arrays.asList(keywords.split(","));
     }
 }

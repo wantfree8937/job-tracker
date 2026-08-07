@@ -97,4 +97,37 @@ describe('JobListPage', () => {
     expect(screen.getByText('백엔드 개발자')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '스크랩' })).toBeInTheDocument()
   })
+
+  it('"내 관심 공고" 토글을 클릭하면 mine=true로 수집 공고를 다시 조회한다', async () => {
+    const user = userEvent.setup()
+
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/jobs/stats')) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+      }
+      if (url.includes('/auth/me')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({ id: 1, email: 't@t.com', nickname: 'tester', createdAt: '2026-01-01', keywords: [] }),
+        })
+      }
+      if (url.includes('/jobs/collected')) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+      }
+      return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: '전체 공고' }))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/jobs/collected'), expect.anything()))
+
+    await user.click(screen.getByRole('button', { name: '내 관심 공고' }))
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('mine=true'), expect.anything()),
+    )
+  })
 })
