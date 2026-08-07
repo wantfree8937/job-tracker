@@ -1,26 +1,33 @@
 # ============================================================
-# Job Tracker 백엔드 Dockerfile (multi-stage 빌드)
-# 1단계: Maven으로 컴파일 → 2단계: JRE만 담은 가벼운 실행 이미지
+# Job Tracker Dockerfile — 프론트+백엔드 단일 이미지 (클라우드 배포용)
+# 1단계: React 빌드 → 2단계: Maven 빌드(static 포함) → 3단계: JRE 실행
 # ============================================================
 
-# ---- 1단계: 빌드 ----
+# ---- 1단계: 프론트 빌드 ----
+FROM node:24 AS frontend
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# ---- 2단계: 백엔드 빌드 ----
 FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /app
 
 # 의존성 캐시 최적화: pom.xml만 먼저 복사해 의존성 다운로드
-# (소스가 바뀌어도 pom이 같으면 캐시 재사용 → 빌드 빨라짐)
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# 소스 복사 후 패키징 (테스트는 CI에서 별도 실행하므로 여기선 스킵)
+# 프론트 빌드 결과물을 Spring Boot static 경로에 복사 (jar에 포함 → 루트로 서빙)
 COPY src ./src
+COPY --from=frontend /app/frontend/dist ./src/main/resources/static
 RUN mvn package -DskipTests -B
 
-# ---- 2단계: 실행 이미지 (경량화) ----
+# ---- 3단계: 실행 이미지 (경량화) ----
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
-# 1단계에서 만든 jar만 복사 (빌드 도구는 포함하지 않음)
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080

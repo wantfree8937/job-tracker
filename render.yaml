@@ -1,0 +1,28 @@
+# Render Blueprint — GitHub 연동 시 자동 배포 설정
+# 사용법: render.com → New + → Blueprint → 이 저장소 선택
+services:
+  - type: web
+    name: job-tracker
+    runtime: docker
+    repo: https://github.com/wantfree8937/job-tracker
+    plan: free
+    healthCheckPath: /api/auth/me
+    envVars:
+      - key: JWT_SECRET
+        sync: false # 배포 시 수동 입력 (32바이트 이상)
+      - key: DB_URL
+        fromDatabase:
+          name: job-tracker-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: job-tracker-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: job-tracker-db
+          property: password
+
+databases:
+  - name: job-tracker-db
+    plan: free

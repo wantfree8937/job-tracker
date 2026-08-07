@@ -39,3 +39,4 @@ src/main/resources/application.yml
 frontend/coverage/
 .playwright-mcp/
 data/
+src/main/resources/static/

@@ -1,0 +1,13 @@
+# Docker 빌드에서 제외할 파일들 (이미지 크기 최적화 + 시크릿 보호)
+.git
+.github
+.idea
+*.md
+docs/
+data/
+frontend/node_modules
+frontend/dist
+frontend/coverage
+frontend/.claude-task-*.md
+.claude-task-*.md
+src/test
