@@ -76,10 +76,26 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: '계정이 없나요? 회원가입' }))
     await user.type(screen.getByLabelText('이메일'), 'test@example.com')
     await user.type(screen.getByLabelText('비밀번호'), 'password123')
+    await user.type(screen.getByLabelText('비밀번호 확인'), 'password123')
     await user.type(screen.getByLabelText('닉네임'), 'tester')
     await user.click(screen.getByRole('button', { name: '가입하기' }))
 
     expect(await screen.findByRole('heading', { name: '로그인' })).toBeInTheDocument()
     expect(screen.getByText('회원가입이 완료되었습니다. 로그인해 주세요.')).toBeInTheDocument()
+  })
+
+  it('비밀번호와 비밀번호 확인이 다르면 에러 메시지를 표시하고 가입 API를 호출하지 않는다', async () => {
+    const user = userEvent.setup()
+    render(<LoginPage onLogin={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: '계정이 없나요? 회원가입' }))
+    await user.type(screen.getByLabelText('이메일'), 'test@example.com')
+    await user.type(screen.getByLabelText('비밀번호'), 'password123')
+    await user.type(screen.getByLabelText('비밀번호 확인'), 'password456')
+    await user.type(screen.getByLabelText('닉네임'), 'tester')
+    await user.click(screen.getByRole('button', { name: '가입하기' }))
+
+    expect(await screen.findByText('비밀번호가 일치하지 않습니다')).toBeInTheDocument()
+    expect(signup).not.toHaveBeenCalled()
   })
 })

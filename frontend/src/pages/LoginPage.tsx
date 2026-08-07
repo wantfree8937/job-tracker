@@ -5,6 +5,7 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
   const [isSignup, setIsSignup] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState('')
 
@@ -14,9 +15,14 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
 
     try {
       if (isSignup) {
+        if (password !== passwordConfirm) {
+          setError('비밀번호가 일치하지 않습니다')
+          return
+        }
         await signup(email, password, nickname)
         setIsSignup(false)
         setPassword('')
+        setPasswordConfirm('')
         setError('회원가입이 완료되었습니다. 로그인해 주세요.')
       } else {
         await login(email, password)
@@ -44,6 +50,16 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
           비밀번호
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </label>
+        {isSignup && (
+          <label>
+            비밀번호 확인
+            <input
+              type="password"
+              value={passwordConfirm}
+              onChange={(e) => setPasswordConfirm(e.target.value)}
+            />
+          </label>
+        )}
         {isSignup && (
           <label>
             닉네임

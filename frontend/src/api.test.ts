@@ -83,13 +83,13 @@ describe('api', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     await createJob({ companyName: '회사', position: '백엔드' })
-    expect(fetchMock).toHaveBeenLastCalledWith('http://localhost:8080/api/jobs', expect.objectContaining({ method: 'POST' }))
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/jobs', expect.objectContaining({ method: 'POST' }))
 
     await updateJob(1, { status: 'APPLIED' })
-    expect(fetchMock).toHaveBeenLastCalledWith('http://localhost:8080/api/jobs/1', expect.objectContaining({ method: 'PATCH' }))
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/jobs/1', expect.objectContaining({ method: 'PATCH' }))
 
     await deleteJob(1)
-    expect(fetchMock).toHaveBeenLastCalledWith('http://localhost:8080/api/jobs/1', expect.objectContaining({ method: 'DELETE' }))
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/jobs/1', expect.objectContaining({ method: 'DELETE' }))
   })
 
   it('previewLink는 링크를 담아 POST로 프리뷰를 요청한다', async () => {
@@ -99,7 +99,7 @@ describe('api', () => {
     await previewLink('https://example.com/job')
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:8080/api/jobs/preview',
+      '/api/jobs/preview',
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ link: 'https://example.com/job' }) }),
     )
   })
@@ -111,7 +111,7 @@ describe('api', () => {
     await scrapCollectedJob(5)
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:8080/api/jobs/collected/5/scrap',
+      '/api/jobs/collected/5/scrap',
       expect.objectContaining({ method: 'POST' }),
     )
   })
@@ -129,7 +129,7 @@ describe('api', () => {
     await updateKeywords(['백엔드'])
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:8080/api/auth/me/keywords',
+      '/api/auth/me/keywords',
       expect.objectContaining({ method: 'PUT', body: JSON.stringify({ keywords: ['백엔드'] }) }),
     )
   })
@@ -141,7 +141,7 @@ describe('api', () => {
     await searchJobs('게임 개발')
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:8080/api/jobs/collect/search',
+      '/api/jobs/collect/search',
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ keyword: '게임 개발' }) }),
     )
   })

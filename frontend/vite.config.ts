@@ -5,6 +5,12 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    // 개발 서버에서 /api 요청을 백엔드(8080)로 전달
+    proxy: {
+      '/api': 'http://localhost:8080',
+    },
+  },
   test: {
     // 브라우저 환경(jsdom)에서 컴포넌트 테스트 실행
     environment: 'jsdom',

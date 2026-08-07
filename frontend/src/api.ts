@@ -1,6 +1,6 @@
 import type { AuthResponse, JobPosting, ApplicationStatus, JobStats, User, CollectedJob, LinkPreview } from './types'
 
-const BASE_URL = 'http://localhost:8080/api'
+const BASE_URL = '/api'
 
 interface ApiErrorBody {
   message: string
