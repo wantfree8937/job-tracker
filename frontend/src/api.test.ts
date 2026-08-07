@@ -10,6 +10,7 @@ import {
   scrapCollectedJob,
   updateKeywords,
   getCollectedJobs,
+  searchJobs,
 } from './api'
 
 function mockFetchOnce(status: number, body: unknown) {
@@ -130,6 +131,18 @@ describe('api', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:8080/api/auth/me/keywords',
       expect.objectContaining({ method: 'PUT', body: JSON.stringify({ keywords: ['백엔드'] }) }),
+    )
+  })
+
+  it('searchJobs는 키워드를 담아 POST로 즉시 검색을 요청한다', async () => {
+    const fetchMock = mockFetchOnce(200, { keyword: '게임 개발', collected: 22, skipped: 3 })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await searchJobs('게임 개발')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/jobs/collect/search',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ keyword: '게임 개발' }) }),
     )
   })
 

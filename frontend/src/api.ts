@@ -123,3 +123,13 @@ export function scrapCollectedJob(id: number): Promise<JobPosting> {
 export function previewLink(link: string): Promise<LinkPreview> {
   return request('/jobs/preview', { method: 'POST', body: JSON.stringify({ link }) })
 }
+
+export interface JobSearchResult {
+  keyword: string
+  collected: number
+  skipped: number
+}
+
+export function searchJobs(keyword: string): Promise<JobSearchResult> {
+  return request('/jobs/collect/search', { method: 'POST', body: JSON.stringify({ keyword }) })
+}

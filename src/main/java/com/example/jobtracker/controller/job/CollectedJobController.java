@@ -2,6 +2,7 @@ package com.example.jobtracker.controller.job;
 
 import com.example.jobtracker.dto.job.*;
 import com.example.jobtracker.service.job.CollectedJobService;
+import com.example.jobtracker.service.job.JobSearchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import java.util.List;
 public class CollectedJobController {
 
     private final CollectedJobService collectedJobService;
+    private final JobSearchService jobSearchService;
 
     // 크롤러가 저장한 JSON 파일을 DB로 적재
     @PostMapping("/collected/load")
@@ -45,5 +47,17 @@ public class CollectedJobController {
     @PostMapping("/preview")
     public ResponseEntity<LinkPreviewResponse> preview(@Valid @RequestBody LinkPreviewRequest request) {
         return ResponseEntity.ok(collectedJobService.preview(request));
+    }
+
+    // 자유 키워드로 원티드/잡코리아를 즉시 검색해 수집
+    @PostMapping("/collect/search")
+    public ResponseEntity<JobSearchResult> search(@Valid @RequestBody JobSearchRequest request) {
+        return ResponseEntity.ok(jobSearchService.search(request.keyword()));
+    }
+
+    // 모든 사용자의 관심 키워드 목록 (중복 제거) — 크롤러가 매일 자동 수집 시 조회
+    @GetMapping("/collect/keywords")
+    public ResponseEntity<List<String>> keywords() {
+        return ResponseEntity.ok(jobSearchService.findAllKeywords());
     }
 }

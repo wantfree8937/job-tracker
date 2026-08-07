@@ -237,4 +237,76 @@ class CollectedJobControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
     }
+
+    // ⑩ 검색: 빈 키워드는 400
+    @Test
+    void searchBlankKeywordTest() throws Exception {
+        String token = signUpAndLogin("search-blank@test.com");
+        mockMvc.perform(post("/api/jobs/collect/search")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"keyword":""}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ⑪ 검색: 1자 키워드는 400 (2~20자만 허용)
+    @Test
+    void searchTooShortKeywordTest() throws Exception {
+        String token = signUpAndLogin("search-short@test.com");
+        mockMvc.perform(post("/api/jobs/collect/search")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"keyword":"개"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ⑫ 검색: URL 문자가 섞인 키워드는 400 (도메인 고정, 키워드 주입 방지)
+    @Test
+    void searchUrlCharactersRejectedTest() throws Exception {
+        String token = signUpAndLogin("search-url@test.com");
+        mockMvc.perform(post("/api/jobs/collect/search")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"keyword":"http://evil.com"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ⑬ 크롤러용 키워드 조회: 인증 없이 200, 두 사용자가 같은 키워드를 등록해도 한 번만 반환 (중복 제거)
+    @Test
+    void keywordsListDeduplicatedAndPublicTest() throws Exception {
+        String uniqueKeyword = "게임" + UUID.randomUUID().toString().substring(0, 8);
+        String tokenA = signUpAndLogin("keywords-a@test.com");
+        String tokenB = signUpAndLogin("keywords-b@test.com");
+
+        mockMvc.perform(put("/api/auth/me/keywords")
+                .header("Authorization", "Bearer " + tokenA)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"keywords":["%s"]}
+                        """.formatted(uniqueKeyword)));
+        mockMvc.perform(put("/api/auth/me/keywords")
+                .header("Authorization", "Bearer " + tokenB)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"keywords":["%s"]}
+                        """.formatted(uniqueKeyword)));
+
+        String response = mockMvc.perform(get("/api/jobs/collect/keywords"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        long matches = 0;
+        for (var node : objectMapper.readTree(response)) {
+            if (node.asText().equals(uniqueKeyword)) {
+                matches++;
+            }
+        }
+        org.junit.jupiter.api.Assertions.assertEquals(1, matches);
+    }
 }

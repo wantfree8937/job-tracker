@@ -140,11 +140,11 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     }
   }
 
-  const handleKeywordsSaved = (newKeywords: string[]) => {
+  const handleKeywordsSaved = (newKeywords: string[], message?: string) => {
     setKeywords(newKeywords)
     setIsKeywordsModalOpen(false)
-    setKeywordsMessage('관심 분야를 저장했어요')
-    if (tab === 'collected' && mineOnly) loadCollected()
+    setKeywordsMessage(message ?? '관심 분야를 저장했어요')
+    if (tab === 'collected' && (mineOnly || message)) loadCollected()
   }
 
   const handleScrap = async (id: number) => {

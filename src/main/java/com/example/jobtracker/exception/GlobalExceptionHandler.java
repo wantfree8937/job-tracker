@@ -54,6 +54,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ErrorResponse.of(e.getMessage()));
     }
 
+    // 원티드/잡코리아 검색 모두 실패 (502)
+    @ExceptionHandler(JobSearchFailedException.class)
+    public ResponseEntity<ErrorResponse> handleJobSearchFailed(JobSearchFailedException e) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(ErrorResponse.of(e.getMessage()));
+    }
+
     // 잘못된 status 쿼리 파라미터 값 (400)
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e) {
