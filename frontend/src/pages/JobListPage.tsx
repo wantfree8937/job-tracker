@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Header from '../components/Header'
 import StatusBadge from '../components/StatusBadge'
 import JobFormModal from '../components/JobFormModal'
@@ -196,7 +197,8 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     <div className="job-list-page">
       <Header onLogout={onLogout} onOpenKeywords={() => setIsKeywordsModalOpen(true)} />
       <main className="content">
-        {keywordsMessage && <div className="toast toast-success">{keywordsMessage}</div>}
+        {keywordsMessage &&
+          createPortal(<div className="toast toast-success">{keywordsMessage}</div>, document.body)}
         <div className="tabs">
           <button
             type="button"
@@ -263,7 +265,8 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               </button>
             </section>
 
-            {error && <div className="toast toast-error">{error}</div>}
+            {error &&
+              createPortal(<div className="toast toast-error">{error}</div>, document.body)}
 
             <section className="job-list">
               {jobs.length === 0 && <p className="empty-message">등록된 공고가 없습니다.</p>}
@@ -355,8 +358,10 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               </button>
             </section>
 
-            {collectedError && <div className="toast toast-error">{collectedError}</div>}
-            {collectedMessage && <div className="toast toast-success">{collectedMessage}</div>}
+            {collectedError &&
+              createPortal(<div className="toast toast-error">{collectedError}</div>, document.body)}
+            {collectedMessage &&
+              createPortal(<div className="toast toast-success">{collectedMessage}</div>, document.body)}
 
             <section className="job-list">
               {collectedJobs.length === 0 && (
