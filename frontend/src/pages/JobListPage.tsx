@@ -165,7 +165,14 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
       <main className="content">
         {keywordsMessage && <p className="success-message">{keywordsMessage}</p>}
         <div className="tabs">
-          <button type="button" className={tab === 'mine' ? 'tab active' : 'tab'} onClick={() => setTab('mine')}>
+          <button
+            type="button"
+            className={tab === 'mine' ? 'tab active' : 'tab'}
+            onClick={() => {
+              setTab('mine')
+              refresh() // 탭 전환 시마다 최신 목록·통계를 다시 불러온다 (스크랩 반영)
+            }}
+          >
             내 공고
           </button>
           <button
