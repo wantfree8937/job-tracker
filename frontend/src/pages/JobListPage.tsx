@@ -196,7 +196,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     <div className="job-list-page">
       <Header onLogout={onLogout} onOpenKeywords={() => setIsKeywordsModalOpen(true)} />
       <main className="content">
-        {keywordsMessage && <p className="success-message">{keywordsMessage}</p>}
+        {keywordsMessage && <div className="toast toast-success">{keywordsMessage}</div>}
         <div className="tabs">
           <button
             type="button"
@@ -263,17 +263,17 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               </button>
             </section>
 
-            {error && <p className="error-message">{error}</p>}
+            {error && <div className="toast toast-error">{error}</div>}
 
             <section className="job-list">
               {jobs.length === 0 && <p className="empty-message">등록된 공고가 없습니다.</p>}
               {jobs.map((job) => (
                 <article key={job.id} className="job-card">
                   <div className="job-card-header">
-                    <h3>{job.companyName}</h3>
+                    <h3 title={job.companyName}>{job.companyName}</h3>
                     <StatusBadge status={job.status} />
                   </div>
-                  <p className="job-position">{job.position}</p>
+                  <p className="job-position" title={job.position}>{job.position}</p>
                   {job.deadline && <p className="job-deadline">마감일: {job.deadline}</p>}
                   {job.memo && <p className="job-memo">{job.memo}</p>}
                   <div className="job-card-footer">
@@ -355,8 +355,8 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               </button>
             </section>
 
-            {collectedError && <p className="error-message">{collectedError}</p>}
-            {collectedMessage && <p className="success-message">{collectedMessage}</p>}
+            {collectedError && <div className="toast toast-error">{collectedError}</div>}
+            {collectedMessage && <div className="toast toast-success">{collectedMessage}</div>}
 
             <section className="job-list">
               {collectedJobs.length === 0 && (
@@ -367,12 +367,12 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                 return (
                   <article key={job.id} className="job-card">
                     <div className="job-card-header">
-                      <h3>{job.company}</h3>
+                      <h3 title={job.company}>{job.company}</h3>
                       <span className={`badge ${SOURCE_CLASS[job.source] ?? 'badge-wish'}`}>{job.source}</span>
                     </div>
-                    <p className="job-position">{job.title}</p>
+                    <p className="job-position" title={job.title}>{job.title}</p>
                     <div className="job-card-footer">
-                      <a href={job.url} target="_blank" rel="noreferrer" className="job-link">
+                      <a href={job.url} target="_blank" rel="noreferrer" className="job-link" title={job.url}>
                         {job.url}
                       </a>
                       <div className="job-card-actions">
