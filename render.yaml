@@ -6,7 +6,7 @@ services:
     runtime: docker
     repo: https://github.com/wantfree8937/job-tracker
     plan: free
-    healthCheckPath: /api/auth/me
+    healthCheckPath: /api/health
     envVars:
       - key: JWT_SECRET
         sync: false # 배포 시 수동 입력 (32바이트 이상)
