@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { login, getJobs, signup, createJob, updateJob, deleteJob } from './api'
+import { login, getJobs, signup, createJob, updateJob, deleteJob, previewLink, scrapCollectedJob } from './api'
 
 function mockFetchOnce(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
@@ -78,5 +78,29 @@ describe('api', () => {
 
     await deleteJob(1)
     expect(fetchMock).toHaveBeenLastCalledWith('http://localhost:8080/api/jobs/1', expect.objectContaining({ method: 'DELETE' }))
+  })
+
+  it('previewLink는 링크를 담아 POST로 프리뷰를 요청한다', async () => {
+    const fetchMock = mockFetchOnce(200, { company: '카카오', position: '백엔드', memo: null })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await previewLink('https://example.com/job')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/jobs/preview',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ link: 'https://example.com/job' }) }),
+    )
+  })
+
+  it('scrapCollectedJob은 수집 공고 id로 POST 스크랩 요청을 보낸다', async () => {
+    const fetchMock = mockFetchOnce(201, {})
+    vi.stubGlobal('fetch', fetchMock)
+
+    await scrapCollectedJob(5)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/jobs/collected/5/scrap',
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 })

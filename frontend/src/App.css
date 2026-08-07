@@ -63,6 +63,45 @@
   padding: 40px;
 }
 
+.success-message {
+  color: var(--offer-text);
+  background: var(--offer-bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 12px;
+}
+
+/* 탭 */
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  transition: color 0.2s, border-color 0.2s;
+}
+.tab:hover {
+  color: var(--accent);
+}
+.tab.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.job-link {
+  font-size: 13px;
+  color: var(--accent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* 헤더 */
 .header {
   display: flex;
@@ -397,6 +436,14 @@
 .modal textarea {
   resize: vertical;
   min-height: 70px;
+}
+
+.link-input-row {
+  display: flex;
+  gap: 8px;
+}
+.link-input-row input {
+  flex: 1;
 }
 
 .modal-actions {

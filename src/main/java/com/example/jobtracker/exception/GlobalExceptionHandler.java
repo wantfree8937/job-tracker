@@ -42,6 +42,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(e.getMessage()));
     }
 
+    // 이미 스크랩한 수집 공고 (409)
+    @ExceptionHandler(JobAlreadyScrapedException.class)
+    public ResponseEntity<ErrorResponse> handleJobAlreadyScraped(JobAlreadyScrapedException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(e.getMessage()));
+    }
+
+    // 링크 프리뷰 실패: 접속 불가/파싱 실패 (422)
+    @ExceptionHandler(LinkPreviewFailedException.class)
+    public ResponseEntity<ErrorResponse> handleLinkPreviewFailed(LinkPreviewFailedException e) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ErrorResponse.of(e.getMessage()));
+    }
+
     // 잘못된 status 쿼리 파라미터 값 (400)
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e) {

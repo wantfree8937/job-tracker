@@ -39,3 +39,21 @@ export interface User {
 
 // 상태별 개수 통계 (없는 상태는 응답에서 생략될 수 있음)
 export type JobStats = Partial<Record<ApplicationStatus, number>>
+
+// 크롤러가 수집한 공고 (모든 사용자 공유)
+export interface CollectedJob {
+  id: number
+  company: string
+  title: string
+  url: string
+  source: string
+  jobKey: string
+  createdAt: string
+}
+
+// 링크 미리보기 결과 (못 찾은 필드는 null)
+export interface LinkPreview {
+  company: string | null
+  position: string | null
+  memo: string | null
+}

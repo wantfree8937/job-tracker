@@ -55,4 +55,46 @@ describe('JobListPage', () => {
     await waitFor(() => expect(screen.queryByText('카카오')).not.toBeInTheDocument())
     expect(screen.getByText('네이버')).toBeInTheDocument()
   })
+
+  it('전체 공고 탭으로 전환하면 수집 공고 목록을 조회해 보여준다', async () => {
+    const user = userEvent.setup()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/stats')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+        }
+        if (url.includes('/jobs/collected')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => [
+              {
+                id: 1,
+                company: '토스',
+                title: '백엔드 개발자',
+                url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/1',
+                source: '잡코리아',
+                jobKey: '잡코리아:1',
+                createdAt: '2026-01-01T00:00:00Z',
+              },
+            ],
+          })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+      }),
+    )
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    // 초기 화면은 "내 공고" 탭이므로 수집 공고는 아직 없다
+    expect(screen.queryByText('토스')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '전체 공고' }))
+
+    await waitFor(() => expect(screen.getByText('토스')).toBeInTheDocument())
+    expect(screen.getByText('백엔드 개발자')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '스크랩' })).toBeInTheDocument()
+  })
 })

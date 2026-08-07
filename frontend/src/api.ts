@@ -1,4 +1,4 @@
-import type { AuthResponse, JobPosting, ApplicationStatus, JobStats, User } from './types'
+import type { AuthResponse, JobPosting, ApplicationStatus, JobStats, User, CollectedJob, LinkPreview } from './types'
 
 const BASE_URL = 'http://localhost:8080/api'
 
@@ -90,4 +90,29 @@ export function updateJob(id: number, input: Partial<JobInput>): Promise<JobPost
 
 export function deleteJob(id: number): Promise<void> {
   return request(`/jobs/${id}`, { method: 'DELETE' })
+}
+
+export interface CollectedJobLoadResult {
+  loaded: number
+  skipped: number
+}
+
+export function loadCollectedJobs(): Promise<CollectedJobLoadResult> {
+  return request('/jobs/collected/load', { method: 'POST' })
+}
+
+export function getCollectedJobs(params: { keyword?: string; source?: string } = {}): Promise<CollectedJob[]> {
+  const query = new URLSearchParams()
+  if (params.keyword) query.set('keyword', params.keyword)
+  if (params.source) query.set('source', params.source)
+  const qs = query.toString()
+  return request(`/jobs/collected${qs ? `?${qs}` : ''}`)
+}
+
+export function scrapCollectedJob(id: number): Promise<JobPosting> {
+  return request(`/jobs/collected/${id}/scrap`, { method: 'POST' })
+}
+
+export function previewLink(link: string): Promise<LinkPreview> {
+  return request('/jobs/preview', { method: 'POST', body: JSON.stringify({ link }) })
 }

@@ -38,3 +38,4 @@ src/main/resources/application.yml
 .claude-task-*.md
 frontend/coverage/
 .playwright-mcp/
+data/

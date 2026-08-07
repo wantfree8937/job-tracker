@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { createJob, updateJob } from '../api'
+import { createJob, updateJob, previewLink } from '../api'
 import { ALL_STATUSES, STATUS_LABEL, type ApplicationStatus, type JobPosting } from '../types'
 
 interface JobFormModalProps {
@@ -48,6 +48,19 @@ export default function JobFormModal({ job, onClose, onSaved }: JobFormModalProp
     }
   }
 
+  // 링크로 회사명/포지션/메모 자동 채우기 (기존 값은 덮어쓰지 않음)
+  const handleAutoFill = async () => {
+    setError('')
+    try {
+      const preview = await previewLink(link)
+      if (preview.company && !companyName) setCompanyName(preview.company)
+      if (preview.position && !position) setPosition(preview.position)
+      if (preview.memo && !memo) setMemo(preview.memo)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '링크 정보를 가져올 수 없습니다.')
+    }
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
@@ -63,7 +76,12 @@ export default function JobFormModal({ job, onClose, onSaved }: JobFormModalProp
         </label>
         <label>
           링크
-          <input type="text" value={link} onChange={(e) => setLink(e.target.value)} />
+          <div className="link-input-row">
+            <input type="text" value={link} onChange={(e) => setLink(e.target.value)} />
+            <button type="button" className="outline-button" onClick={handleAutoFill} disabled={!link.trim()}>
+              자동 채우기
+            </button>
+          </div>
         </label>
         <label>
           마감일
