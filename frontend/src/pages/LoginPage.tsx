@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { login, signup } from '../api'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -46,6 +47,19 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
 
+  // 에러/성공 메시지를 토스트로 잠깐만 띄운다 (3초 후 자동 제거 — 레이아웃 밀림 없음)
+  useEffect(() => {
+    if (!error) return
+    const timer = setTimeout(() => setError(''), 3000)
+    return () => clearTimeout(timer)
+  }, [error])
+
+  useEffect(() => {
+    if (!success) return
+    const timer = setTimeout(() => setSuccess(''), 3000)
+    return () => clearTimeout(timer)
+  }, [success])
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
@@ -84,10 +98,10 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
           <p>채용 공고 지원을 한눈에</p>
         </div>
         <h2>{isSignup ? '회원가입' : '로그인'}</h2>
-        <div className="auth-message">
-          {error && <p className="error-message">{error}</p>}
-          {success && <p className="success-message">{success}</p>}
-        </div>
+        {error &&
+          createPortal(<div className="toast toast-error">{error}</div>, document.body)}
+        {success &&
+          createPortal(<div className="toast toast-success">{success}</div>, document.body)}
         <label>
           이메일
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
