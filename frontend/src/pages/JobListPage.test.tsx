@@ -243,6 +243,29 @@ describe('JobListPage', () => {
     await waitFor(() => expect(screen.getByText('정렬: 최신 수집순')).toBeInTheDocument())
   })
 
+  it('검색 범위를 "회사명"으로 바꾸면 searchField=company로 수집 공고를 조회한다', async () => {
+    const user = userEvent.setup()
+
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/jobs/stats')) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+      }
+      return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: '전체 공고' }))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/jobs/collected'), expect.anything()))
+
+    await user.selectOptions(screen.getByLabelText('검색 범위'), '회사명')
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('searchField=company'), expect.anything()),
+    )
+  })
+
   it('삭제 버튼을 누르면 확인 모달이 뜨고, 확인해야 삭제 요청이 전송된다', async () => {
     const user = userEvent.setup()
 

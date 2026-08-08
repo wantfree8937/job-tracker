@@ -65,12 +65,12 @@ public class JobSearchService {
             throw new JobSearchFailedException();
         }
 
-        // 회사명에만 키워드가 들어간 무관한 공고를 걸러낸다 (예: '네트워크' 검색 시 회사명에만 매칭되는 공고 제외)
-        List<CollectedJob> titleMatched = filterByTitleKeyword(found, keyword);
+        // 제목/회사명 어디에도 키워드가 없는 무관한 공고를 걸러낸다
+        List<CollectedJob> matched = filterByTitleOrCompany(found, keyword);
 
         int collected = 0;
-        int skipped = found.size() - titleMatched.size();
-        for (CollectedJob job : titleMatched) {
+        int skipped = found.size() - matched.size();
+        for (CollectedJob job : matched) {
             if (collectedJobRepository.existsByJobKey(job.getJobKey())) {
                 skipped++;
                 continue;
@@ -81,11 +81,12 @@ public class JobSearchService {
         return new JobSearchResult(keyword, collected, skipped);
     }
 
-    // 제목(title)에 키워드가 포함된 공고만 남긴다 (대소문자 무시)
-    static List<CollectedJob> filterByTitleKeyword(List<CollectedJob> jobs, String keyword) {
+    // 제목(title) 또는 회사명(company)에 키워드가 포함된 공고만 남긴다 (대소문자 무시)
+    static List<CollectedJob> filterByTitleOrCompany(List<CollectedJob> jobs, String keyword) {
         String lowerKeyword = keyword.toLowerCase();
         return jobs.stream()
-                .filter(job -> job.getTitle().toLowerCase().contains(lowerKeyword))
+                .filter(job -> job.getTitle().toLowerCase().contains(lowerKeyword)
+                        || job.getCompany().toLowerCase().contains(lowerKeyword))
                 .toList();
     }
 

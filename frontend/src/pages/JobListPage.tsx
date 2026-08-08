@@ -5,7 +5,7 @@ import StatusBadge from '../components/StatusBadge'
 import JobFormModal from '../components/JobFormModal'
 import KeywordsModal from '../components/KeywordsModal'
 import ConfirmModal from '../components/ConfirmModal'
-import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me } from '../api'
+import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me, type CollectedJobSearchField } from '../api'
 import { ALL_STATUSES, STATUS_LABEL, type ApplicationStatus, type JobPosting, type JobStats, type CollectedJob } from '../types'
 
 // 상태별 통계 카드 이모지
@@ -38,6 +38,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
 
   const [collectedJobs, setCollectedJobs] = useState<CollectedJob[]>([])
   const [collectedKeyword, setCollectedKeyword] = useState('')
+  const [searchField, setSearchField] = useState<CollectedJobSearchField>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('ALL')
   const [mineOnly, setMineOnly] = useState(false)
   const [scrapedIds, setScrapedIds] = useState<Set<number>>(new Set())
@@ -150,6 +151,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         keyword: collectedKeyword || undefined,
         source: sourceFilter === 'ALL' ? undefined : sourceFilter,
         mine: mineOnly || undefined,
+        searchField,
       })
       // 스크랩한 공고는 이미 확인했으므로 목록 아래로 내린다 (createdAt DESC는 그대로 유지)
       const sorted = [...data].sort((a, b) => Number(a.scrapedByMe) - Number(b.scrapedByMe))
@@ -158,7 +160,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     } catch (err) {
       setCollectedError(err instanceof Error ? err.message : '수집 공고를 불러오지 못했습니다.')
     }
-  }, [collectedKeyword, sourceFilter, mineOnly])
+  }, [collectedKeyword, searchField, sourceFilter, mineOnly])
 
   useEffect(() => {
     if (tab === 'collected') loadCollected()
@@ -327,6 +329,15 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
             </div>
 
             <section className="toolbar">
+              <select
+                aria-label="검색 범위"
+                value={searchField}
+                onChange={(e) => setSearchField(e.target.value as CollectedJobSearchField)}
+              >
+                <option value="all">전체</option>
+                <option value="company">회사명</option>
+                <option value="title">제목</option>
+              </select>
               <div className="search-wrapper">
                 <input
                   type="text"

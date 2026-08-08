@@ -105,13 +105,16 @@ export function loadCollectedJobs(): Promise<CollectedJobLoadResult> {
   return request('/jobs/collected/load', { method: 'POST' })
 }
 
+export type CollectedJobSearchField = 'all' | 'company' | 'title'
+
 export function getCollectedJobs(
-  params: { keyword?: string; source?: string; mine?: boolean } = {},
+  params: { keyword?: string; source?: string; mine?: boolean; searchField?: CollectedJobSearchField } = {},
 ): Promise<CollectedJob[]> {
   const query = new URLSearchParams()
   if (params.keyword) query.set('keyword', params.keyword)
   if (params.source) query.set('source', params.source)
   if (params.mine) query.set('mine', 'true')
+  if (params.searchField && params.searchField !== 'all') query.set('searchField', params.searchField)
   const qs = query.toString()
   return request(`/jobs/collected${qs ? `?${qs}` : ''}`)
 }

@@ -78,18 +78,23 @@ public class CollectedJobService {
     }
 
     // 수집 공고 목록 (keyword/source 필터 + mine=true일 때 내 관심 키워드로 추가 필터, 최신 등록순)
+    // searchField: all(기본, 제목+회사명) / company(회사명만) / title(제목만)
     @Transactional(readOnly = true)
-    public List<CollectedJobResponse> findAll(String keyword, String source, boolean mine, String email) {
+    public List<CollectedJobResponse> findAll(String keyword, String source, boolean mine, String email, String searchField) {
         String pattern = (keyword == null || keyword.isBlank()) ? null : "%" + keyword.trim().toLowerCase() + "%";
         String sourceFilter = (source == null || source.isBlank()) ? null : source.trim();
 
-        List<CollectedJob> jobs = collectedJobRepository.search(sourceFilter, pattern);
+        List<CollectedJob> jobs = switch (searchField) {
+            case "company" -> collectedJobRepository.searchByCompany(sourceFilter, pattern);
+            case "title" -> collectedJobRepository.searchByTitle(sourceFilter, pattern);
+            default -> collectedJobRepository.search(sourceFilter, pattern);
+        };
 
         if (mine) {
             List<String> myKeywords = getMyKeywords(email);
             if (!myKeywords.isEmpty()) {
                 jobs = jobs.stream()
-                        .filter(job -> matchesAnyKeyword(job, myKeywords))
+                        .filter(job -> matchesAnyKeyword(job, myKeywords, searchField))
                         .toList();
             }
         }
@@ -109,11 +114,15 @@ public class CollectedJobService {
                 .collect(Collectors.toSet());
     }
 
-    // 관심 키워드 중 하나라도 제목/회사명에 포함되는지 확인 (대소문자 무시)
-    private boolean matchesAnyKeyword(CollectedJob job, List<String> keywords) {
+    // 관심 키워드 중 하나라도 제목/회사명(searchField로 범위 지정)에 포함되는지 확인 (대소문자 무시)
+    private boolean matchesAnyKeyword(CollectedJob job, List<String> keywords, String searchField) {
         String title = job.getTitle() == null ? "" : job.getTitle().toLowerCase();
         String company = job.getCompany() == null ? "" : job.getCompany().toLowerCase();
-        return keywords.stream().anyMatch(k -> title.contains(k) || company.contains(k));
+        return keywords.stream().anyMatch(k -> switch (searchField) {
+            case "company" -> company.contains(k);
+            case "title" -> title.contains(k);
+            default -> title.contains(k) || company.contains(k);
+        });
     }
 
     private List<String> getMyKeywords(String email) {

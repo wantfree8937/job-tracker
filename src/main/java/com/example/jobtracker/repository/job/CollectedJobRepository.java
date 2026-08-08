@@ -21,4 +21,20 @@ public interface CollectedJobRepository extends JpaRepository<CollectedJob, Long
             ORDER BY c.createdAt DESC
             """)
     List<CollectedJob> search(@Param("source") String source, @Param("keyword") String keyword);
+
+    @Query("""
+            SELECT c FROM CollectedJob c
+            WHERE (:source IS NULL OR c.source = :source)
+              AND (:keyword IS NULL OR LOWER(c.company) LIKE :keyword)
+            ORDER BY c.createdAt DESC
+            """)
+    List<CollectedJob> searchByCompany(@Param("source") String source, @Param("keyword") String keyword);
+
+    @Query("""
+            SELECT c FROM CollectedJob c
+            WHERE (:source IS NULL OR c.source = :source)
+              AND (:keyword IS NULL OR LOWER(c.title) LIKE :keyword)
+            ORDER BY c.createdAt DESC
+            """)
+    List<CollectedJob> searchByTitle(@Param("source") String source, @Param("keyword") String keyword);
 }

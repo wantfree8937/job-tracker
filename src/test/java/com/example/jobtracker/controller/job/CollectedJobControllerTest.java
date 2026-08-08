@@ -267,6 +267,46 @@ class CollectedJobControllerTest {
                 .andExpect(jsonPath("$.length()").value(1));
     }
 
+    // ⑨-1 searchField=company: 회사명에만 키워드가 매칭되는 공고를 반환한다
+    @Test
+    void searchFieldCompanyMatchesCompanyOnlyTest() throws Exception {
+        String token = signUpAndLogin("search-field-company@test.com");
+        String uniqueKeyword = "네트워크컴퍼니" + UUID.randomUUID();
+        writeAlerts("""
+                [{"company":"%s","title":"백엔드 개발자","url":"https://sf-company.com/1","source":"잡코리아","jobKey":"test:%s"},
+                 {"company":"일반회사","title":"%s 엔지니어","url":"https://sf-company.com/2","source":"잡코리아","jobKey":"test:%s"}]
+                """.formatted(uniqueKeyword, UUID.randomUUID(), uniqueKeyword, UUID.randomUUID()));
+        mockMvc.perform(post("/api/jobs/collected/load").header("Authorization", "Bearer " + token));
+
+        mockMvc.perform(get("/api/jobs/collected")
+                        .param("keyword", uniqueKeyword)
+                        .param("searchField", "company")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].company").value(uniqueKeyword));
+    }
+
+    // ⑨-2 searchField=title: 제목에만 키워드가 매칭되는 공고를 반환한다
+    @Test
+    void searchFieldTitleMatchesTitleOnlyTest() throws Exception {
+        String token = signUpAndLogin("search-field-title@test.com");
+        String uniqueKeyword = "안드로이드전문" + UUID.randomUUID();
+        writeAlerts("""
+                [{"company":"일반회사","title":"%s 개발자","url":"https://sf-title.com/1","source":"잡코리아","jobKey":"test:%s"},
+                 {"company":"%s","title":"디자이너 채용","url":"https://sf-title.com/2","source":"잡코리아","jobKey":"test:%s"}]
+                """.formatted(uniqueKeyword, UUID.randomUUID(), uniqueKeyword, UUID.randomUUID()));
+        mockMvc.perform(post("/api/jobs/collected/load").header("Authorization", "Bearer " + token));
+
+        mockMvc.perform(get("/api/jobs/collected")
+                        .param("keyword", uniqueKeyword)
+                        .param("searchField", "title")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value(uniqueKeyword + " 개발자"));
+    }
+
     // ⑩ 검색: 빈 키워드는 400
     @Test
     void searchBlankKeywordTest() throws Exception {
