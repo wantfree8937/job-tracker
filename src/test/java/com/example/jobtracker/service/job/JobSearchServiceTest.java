@@ -38,4 +38,13 @@ class JobSearchServiceTest {
 
         assertThat(result).hasSize(1);
     }
+
+    @Test
+    void 잡코리아_검색_URL에_Page_No가_포함된다() {
+        String url = JobSearchService.jobKoreaSearchUrl("네트워크", 2);
+
+        assertThat(url).contains("Page_No=2");
+        assertThat(url).contains("stext=");
+        assertThat(url).contains("tabType=recruit&careerType=1");
+    }
 }

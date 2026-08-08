@@ -147,21 +147,35 @@ public class JobSearchService {
         return jobs;
     }
 
-    private List<CollectedJob> searchJobKorea(String keyword) {
-        String url = "https://www.jobkorea.co.kr/Search/?stext="
-                + URLEncoder.encode(keyword, StandardCharsets.UTF_8) + "&tabType=recruit&careerType=1";
-        String html = null;
-        try {
-            html = fetchWithCurl(url);
-        } catch (Exception e) {
-            log.warn("잡코리아 검색 curl 실패: {}", e.getMessage());
-            return List.of();
-        }
+    // 잡코리아 결과가 페이지당 21~22건이라 1페이지만으로는 후순위 공고가 유실됨 (실측: '네트워크' 검색 시 3페이지 소재 공고 누락)
+    private static final int JOBKOREA_MAX_PAGE = 3;
 
+    private List<CollectedJob> searchJobKorea(String keyword) {
         List<CollectedJob> jobs = new ArrayList<>();
-        if (html == null) {
-            return jobs;
+        for (int page = 1; page <= JOBKOREA_MAX_PAGE; page++) {
+            String url = jobKoreaSearchUrl(keyword, page);
+            String html;
+            try {
+                html = fetchWithCurl(url);
+            } catch (Exception e) {
+                log.warn("잡코리아 검색 curl 실패 (Page_No={}): {}", page, e.getMessage());
+                continue;
+            }
+            if (html == null) {
+                continue;
+            }
+            jobs.addAll(parseJobKoreaCards(html));
         }
+        return jobs;
+    }
+
+    static String jobKoreaSearchUrl(String keyword, int page) {
+        return "https://www.jobkorea.co.kr/Search/?stext="
+                + URLEncoder.encode(keyword, StandardCharsets.UTF_8) + "&tabType=recruit&careerType=1&Page_No=" + page;
+    }
+
+    private static List<CollectedJob> parseJobKoreaCards(String html) {
+        List<CollectedJob> jobs = new ArrayList<>();
         String[] cards = html.split(Pattern.quote(CARD_DELIMITER));
         for (int i = 1; i < cards.length; i++) {
             String card = cards[i];

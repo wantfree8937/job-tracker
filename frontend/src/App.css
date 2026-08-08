@@ -342,6 +342,23 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
+.search-field-select {
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-field-select:hover {
+  border-color: var(--accent);
+}
+.search-field-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
 .status-filters {
   display: flex;
   flex-wrap: wrap;

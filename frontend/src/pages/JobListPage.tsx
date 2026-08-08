@@ -330,6 +330,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
 
             <section className="toolbar">
               <select
+                className="search-field-select"
                 aria-label="검색 범위"
                 value={searchField}
                 onChange={(e) => setSearchField(e.target.value as CollectedJobSearchField)}
