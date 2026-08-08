@@ -234,6 +234,27 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+}
+.password-input-wrapper input {
+  flex: 1;
+  padding-right: 40px;
+}
+.password-toggle-button {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 6px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--text);
+}
+
 /* 공고 목록 페이지 */
 .content {
   max-width: 1080px;
