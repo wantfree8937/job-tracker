@@ -3,6 +3,38 @@ import { login, signup } from '../api'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// 비밀번호 보이기/숨기기 아이콘 (20x20, currentColor로 테마 색상 상속)
+function EyeIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M1.5 10C1.5 10 4.5 4 10 4C15.5 4 18.5 10 18.5 10C18.5 10 15.5 16 10 16C4.5 16 1.5 10 1.5 10Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M1.5 10C1.5 10 4.5 4 10 4C15.5 4 18.5 10 18.5 10C18.5 10 15.5 16 10 16C4.5 16 1.5 10 1.5 10Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="3" y1="17" x2="17" y2="3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export default function LoginPage({ onLogin }: { onLogin: () => void }) {
   const [isSignup, setIsSignup] = useState(false)
   const [email, setEmail] = useState('')
@@ -52,8 +84,10 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
           <p>채용 공고 지원을 한눈에</p>
         </div>
         <h2>{isSignup ? '회원가입' : '로그인'}</h2>
-        {error && <p className="error-message">{error}</p>}
-        {success && <p className="success-message">{success}</p>}
+        <div className="auth-message">
+          {error && <p className="error-message">{error}</p>}
+          {success && <p className="success-message">{success}</p>}
+        </div>
         <label>
           이메일
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -71,8 +105,9 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
               className="password-toggle-button"
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+              title={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
             >
-              {showPassword ? '🙈' : '👁'}
+              {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
         </label>
@@ -90,8 +125,9 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
                 className="password-toggle-button"
                 onClick={() => setShowPasswordConfirm((v) => !v)}
                 aria-label={showPasswordConfirm ? '비밀번호 확인 숨기기' : '비밀번호 확인 보기'}
+                title={showPasswordConfirm ? '비밀번호 확인 숨기기' : '비밀번호 확인 보기'}
               >
-                {showPasswordConfirm ? '🙈' : '👁'}
+                {showPasswordConfirm ? <EyeOffIcon /> : <EyeIcon />}
               </button>
             </div>
           </label>
