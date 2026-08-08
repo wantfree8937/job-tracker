@@ -42,6 +42,8 @@
 
 **Render 무료 티어로 배포 중** — https://job-tracker-so4v.onrender.com
 
+데모 계정: `final@test.com` / `password123` (스크랩·지원 상태가 채워진 시연용 계정)
+
 ```
 배포 구성:
   - 프론트+백엔드 단일 Docker 이미지 (React 빌드 → Spring static 서빙)
