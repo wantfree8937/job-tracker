@@ -64,6 +64,43 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void 링크_프리뷰_실패는_422를_반환한다() {
+        // when
+        ResponseEntity<ErrorResponse> resp = handler.handleLinkPreviewFailed(new LinkPreviewFailedException());
+
+        // then: 422 + 프리뷰 실패 안내
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().message()).isNotBlank();
+    }
+
+    @Test
+    void 공고_검색_모두_실패는_502를_반환한다() {
+        // when
+        ResponseEntity<ErrorResponse> resp = handler.handleJobSearchFailed(new JobSearchFailedException());
+
+        // then: 502 + 검색 실패 안내
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().message()).isNotBlank();
+    }
+
+    @Test
+    void 요청_본문_파싱_실패는_400을_반환한다() {
+        // given: 잘못된 JSON 본문으로 인한 파싱 실패 상황
+        org.springframework.http.converter.HttpMessageNotReadableException ex =
+                mock(org.springframework.http.converter.HttpMessageNotReadableException.class);
+
+        // when
+        ResponseEntity<ErrorResponse> resp = handler.handleNotReadable(ex);
+
+        // then: 400 + 본문을 읽을 수 없다는 안내
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().message()).isNotBlank();
+    }
+
+    @Test
     void 예상치_못한_예외는_500을_반환한다() {
         // when: 런타임 예외가 GlobalExceptionHandler까지 전달된 상황
         ResponseEntity<ErrorResponse> resp = handler.handleException(new RuntimeException("DB 연결 실패"));

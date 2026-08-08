@@ -115,13 +115,18 @@ public class JobSearchService {
     private List<CollectedJob> searchWanted(String keyword) {
         String url = "https://www.wanted.co.kr/api/v4/jobs?country=kr&query="
                 + URLEncoder.encode(keyword, StandardCharsets.UTF_8) + "&limit=30";
-        String json = null;
+        String json;
         try {
             json = fetchWithCurl(url);
         } catch (Exception e) {
             log.warn("원티드 검색 curl 실패: {}", e.getMessage());
             return List.of();
         }
+        return parseWanted(json);
+    }
+
+    // 원티드 API JSON 응답을 공고 리스트로 변환한다 (실제 호출 없이 파싱 로직만 테스트하기 위해 분리)
+    static List<CollectedJob> parseWanted(String json) {
         JsonNode root;
         try {
             root = new tools.jackson.databind.ObjectMapper().readTree(json);
@@ -164,7 +169,7 @@ public class JobSearchService {
             if (html == null) {
                 continue;
             }
-            jobs.addAll(parseJobKoreaCards(html));
+            jobs.addAll(parseJobKorea(html));
         }
         return jobs;
     }
@@ -174,7 +179,8 @@ public class JobSearchService {
                 + URLEncoder.encode(keyword, StandardCharsets.UTF_8) + "&tabType=recruit&careerType=1&Page_No=" + page;
     }
 
-    private static List<CollectedJob> parseJobKoreaCards(String html) {
+    // 잡코리아 검색 결과 HTML을 공고 리스트로 변환한다 (실제 호출 없이 파싱 로직만 테스트하기 위해 분리)
+    static List<CollectedJob> parseJobKorea(String html) {
         List<CollectedJob> jobs = new ArrayList<>();
         String[] cards = html.split(Pattern.quote(CARD_DELIMITER));
         for (int i = 1; i < cards.length; i++) {

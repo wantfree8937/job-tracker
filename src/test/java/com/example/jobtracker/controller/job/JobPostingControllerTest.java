@@ -135,6 +135,18 @@ class JobPostingControllerTest {
                 .andExpect(jsonPath("$.status").value("APPLIED"));
     }
 
+    // ⑥-1 내 공고 상세 조회 성공
+    @Test
+    void findOneTest() throws Exception {
+        String token = signUpAndLogin("find-one@test.com");
+        Long id = objectMapper.readTree(createJob(token, "네이버", "백엔드", "WISH")).get("id").asLong();
+
+        mockMvc.perform(get("/api/jobs/" + id).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.companyName").value("네이버"))
+                .andExpect(jsonPath("$.position").value("백엔드"));
+    }
+
     // ⑦ 다른 사용자 공고 접근 시 404 (상세/수정/삭제 공통)
     @Test
     void otherUsersJobNotFoundTest() throws Exception {

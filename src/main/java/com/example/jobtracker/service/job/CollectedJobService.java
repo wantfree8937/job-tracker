@@ -194,7 +194,7 @@ public class CollectedJobService {
     }
 
     // http/https만 허용하고 로컬/사설 대역 접근은 차단한다 (SSRF 방지)
-    private URI validateUrl(String link) {
+    static URI validateUrl(String link) {
         if (!HTTP_SCHEME.matcher(link).find()) {
             throw new IllegalArgumentException("http/https URL만 허용됩니다");
         }
@@ -215,7 +215,7 @@ public class CollectedJobService {
     }
 
     // property/content 순서가 바뀐 경우까지 처리하는 og 메타 태그 추출
-    private String extractMeta(String html, String property) {
+    static String extractMeta(String html, String property) {
         Pattern propertyFirst = Pattern.compile(
                 "<meta[^>]+property=[\"']" + property + "[\"'][^>]+content=[\"']([^\"']*)[\"']");
         Matcher m1 = propertyFirst.matcher(html);

@@ -102,6 +102,29 @@ class CollectedJobControllerTest {
                 .andExpect(jsonPath("$.skipped").value(0));
     }
 
+    // ②-1 파일이 없으면 loaded/skipped 모두 0
+    @Test
+    void loadFromMissingFileTest() throws Exception {
+        String token = signUpAndLogin("load-missing@test.com");
+
+        mockMvc.perform(post("/api/jobs/collected/load").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.loaded").value(0))
+                .andExpect(jsonPath("$.skipped").value(0));
+    }
+
+    // ②-2 파일 내용이 JSON이 아니면 로드 없이 loaded/skipped 모두 0
+    @Test
+    void loadFromInvalidJsonFileTest() throws Exception {
+        String token = signUpAndLogin("load-invalid@test.com");
+        writeAlerts("이것은 JSON이 아닙니다");
+
+        mockMvc.perform(post("/api/jobs/collected/load").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.loaded").value(0))
+                .andExpect(jsonPath("$.skipped").value(0));
+    }
+
     // ③ 같은 jobKey로 다시 로드하면 skipped 증가
     @Test
     void loadDuplicateSkipTest() throws Exception {
@@ -265,6 +288,56 @@ class CollectedJobControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    // ⑧-1 mine=true + searchField=company: 회사명이 관심 키워드와 매칭되는 공고만 반환
+    @Test
+    void mineTrueWithSearchFieldCompanyTest() throws Exception {
+        String token = signUpAndLogin("mine-company@test.com");
+        String uniqueKeyword = "매칭컴퍼니" + UUID.randomUUID().toString().substring(0, 8);
+        writeAlerts("""
+                [{"company":"%s","title":"디자이너 채용","url":"https://mine-company.com/1","source":"잡코리아","jobKey":"test:%s"},
+                 {"company":"일반회사","title":"%s 엔지니어","url":"https://mine-company.com/2","source":"잡코리아","jobKey":"test:%s"}]
+                """.formatted(uniqueKeyword, UUID.randomUUID(), uniqueKeyword, UUID.randomUUID()));
+        mockMvc.perform(post("/api/jobs/collected/load").header("Authorization", "Bearer " + token));
+
+        mockMvc.perform(put("/api/auth/me/keywords")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"keywords":["%s"]}
+                        """.formatted(uniqueKeyword)));
+
+        mockMvc.perform(get("/api/jobs/collected").param("mine", "true").param("searchField", "company")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].company").value(uniqueKeyword));
+    }
+
+    // ⑧-2 mine=true + searchField=title: 제목이 관심 키워드와 매칭되는 공고만 반환
+    @Test
+    void mineTrueWithSearchFieldTitleTest() throws Exception {
+        String token = signUpAndLogin("mine-title@test.com");
+        String uniqueKeyword = "매칭타이틀" + UUID.randomUUID().toString().substring(0, 8);
+        writeAlerts("""
+                [{"company":"%s","title":"디자이너 채용","url":"https://mine-title.com/1","source":"잡코리아","jobKey":"test:%s"},
+                 {"company":"일반회사","title":"%s 엔지니어","url":"https://mine-title.com/2","source":"잡코리아","jobKey":"test:%s"}]
+                """.formatted(uniqueKeyword, UUID.randomUUID(), uniqueKeyword, UUID.randomUUID()));
+        mockMvc.perform(post("/api/jobs/collected/load").header("Authorization", "Bearer " + token));
+
+        mockMvc.perform(put("/api/auth/me/keywords")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"keywords":["%s"]}
+                        """.formatted(uniqueKeyword)));
+
+        mockMvc.perform(get("/api/jobs/collected").param("mine", "true").param("searchField", "title")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value(uniqueKeyword + " 엔지니어"));
     }
 
     // ⑨-1 searchField=company: 회사명에만 키워드가 매칭되는 공고를 반환한다
