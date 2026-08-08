@@ -1,0 +1,67 @@
+# ============================================================
+# 매일 채용공고 자동 수집 (클라우드 DB에 적재)
+# - Render 무료 티어는 스핀다운(잠듦) 때문에 서버 내부 스케줄러로는
+#   정시 실행이 보장되지 않음 → GitHub Actions가 대신 매일 실행!
+# - UTC 08:00 = 한국 17:00
+# ============================================================
+name: daily-collect
+
+on:
+  schedule:
+    - cron: "0 8 * * *"   # 매일 UTC 08:00 (KST 17:00)
+  workflow_dispatch: {}   # 수동 실행 가능
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Render 서버 깨우기 (스핀다운 웜업)
+        run: |
+          curl -s -o /dev/null -w "warmup status: %{http_code}\n" \
+            --max-time 120 https://job-tracker-so4v.onrender.com/ || true
+          # 서버가 완전히 뜰 때까지 대기 (헬스체크 200 확인)
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 \
+              https://job-tracker-so4v.onrender.com/api/health || true)
+            echo "health check: $code"
+            if [ "$code" = "200" ]; then break; fi
+            sleep 10
+          done
+
+      - name: 로그인 (수집 전용 계정)
+        id: login
+        run: |
+          RESP=$(curl -s --max-time 30 -X POST \
+            https://job-tracker-so4v.onrender.com/api/auth/login \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d "{\"email\":\"${{ secrets.CRAWLER_EMAIL }}\",\"password\":\"${{ secrets.CRAWLER_PASSWORD }}\"}")
+          TOKEN=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['accessToken'])")
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+          echo "✅ 로그인 성공"
+
+      - name: 키워드 목록 조회 (전체 사용자 키워드 합집합)
+        id: keywords
+        run: |
+          RESP=$(curl -s --max-time 30 \
+            https://job-tracker-so4v.onrender.com/api/jobs/collect/keywords)
+          echo "$RESP" | python3 -c "import sys,json; print('\n'.join(json.load(sys.stdin)))" > keywords.txt
+          echo "키워드: $(cat keywords.txt | tr '\n' ' ')"
+          echo "count=$(wc -l < keywords.txt)" >> $GITHUB_OUTPUT
+
+      - name: 키워드별 공고 수집
+        env:
+          TOKEN: ${{ steps.login.outputs.token }}
+        run: |
+          if [ ! -s keywords.txt ]; then
+            echo "수집할 키워드 없음 (사용자 키워드 0개) — 종료"
+            exit 0
+          fi
+          while IFS= read -r kw; do
+            echo "=== '$kw' 수집 중 ==="
+            curl -s --max-time 120 -X POST \
+              https://job-tracker-so4v.onrender.com/api/jobs/collect/search \
+              -H "Content-Type: application/json; charset=utf-8" \
+              -H "Authorization: Bearer $TOKEN" \
+              -d "{\"keyword\":\"$kw\"}" \
+              | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"  → 새로 {d.get('collected',0)}건 / 기존 {d.get('skipped',0)}건\")" || echo "  → 수집 실패 (키워드: $kw)"
+          done < keywords.txt
