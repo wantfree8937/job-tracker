@@ -20,7 +20,7 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
     try {
       const user = await updateKeywords(keywords)
       setSuccessMessage('관심 분야를 저장했어요')
-      onSaved(user.keywords, '관심 분야를 저장했어요', true)
+      onSaved(user.keywords, undefined, true) // 상단 토스트는 띄우지 않는다 (모달 안 메시지만)
     } catch (err) {
       setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.')
     }
