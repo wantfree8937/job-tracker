@@ -391,6 +391,11 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                       <span className={`badge ${SOURCE_CLASS[job.source] ?? 'badge-wish'}`}>{job.source}</span>
                     </div>
                     <p className="job-position" title={job.title}>{job.title}</p>
+                    {(job.region || job.experience || job.industry) && (
+                      <p className="job-meta">
+                        {[job.region, job.experience, job.industry].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
                     <div className="job-card-footer">
                       <a href={job.url} target="_blank" rel="noreferrer" className="job-link" title={job.url}>
                         {job.url}

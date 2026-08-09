@@ -13,7 +13,10 @@ public record CollectedJobResponse(
         String source,
         String jobKey,
         LocalDateTime createdAt,
-        boolean scrapedByMe
+        boolean scrapedByMe,
+        String region,
+        String experience,
+        String industry
 ) {
     public static CollectedJobResponse from(CollectedJob job, boolean scrapedByMe) {
         return new CollectedJobResponse(
@@ -24,7 +27,10 @@ public record CollectedJobResponse(
                 job.getSource(),
                 job.getJobKey(),
                 job.getCreatedAt(),
-                scrapedByMe
+                scrapedByMe,
+                job.getRegion(),
+                job.getExperience(),
+                job.getIndustry()
         );
     }
 }

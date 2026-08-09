@@ -64,6 +64,9 @@ export interface CollectedJob {
   jobKey: string
   createdAt: string
   scrapedByMe: boolean
+  region?: string
+  experience?: string
+  industry?: string
 }
 
 // 링크 미리보기 결과 (못 찾은 필드는 null)

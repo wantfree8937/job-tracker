@@ -74,6 +74,23 @@ class JobSearchServiceTest {
         assertThat(jobs).isEmpty();
     }
 
+    @Test
+    void 원티드_JSON에서_지역과_업종을_추출한다() {
+        String json = """
+                {"data":[
+                    {"id":333,"position":"백엔드 개발자","company":{"name":"원티드랩"},
+                     "address":{"location":"서울","district":"종로구"},
+                     "annual_from":3,"annual_to":5,"industry_name":"IT, 컨텐츠"}
+                ]}
+                """;
+
+        List<CollectedJob> jobs = JobSearchService.parseWanted(json);
+
+        assertThat(jobs.get(0).getRegion()).isEqualTo("서울");
+        assertThat(jobs.get(0).getIndustry()).isEqualTo("IT, 컨텐츠");
+        assertThat(jobs.get(0).getExperience()).isNull();
+    }
+
     private static final String JOBKOREA_SAMPLE_HTML = """
             <div>목록 시작</div>
             <div data-sentry-component="CardJob">
@@ -107,5 +124,46 @@ class JobSearchServiceTest {
         List<CollectedJob> jobs = JobSearchService.parseJobKorea("<div>공고가 없습니다</div>");
 
         assertThat(jobs).isEmpty();
+    }
+
+    // 실측 GrayChip 구조: 1번째 칩=지역, 2번째 칩=업종 리스트(쉼표 구분), 지역-업종 사이에 태그가 끼어 있어도 매칭돼야 함
+    private static final String JOBKOREA_SAMPLE_WITH_META = """
+            <div>목록 시작</div>
+            <div data-sentry-component="CardJob">
+                <a href="/Recruit/GI_Read/54321?Oem_Code=1">
+                    <span class="text-typo-b1-18 text-gray900">백엔드개발자</span>
+                </a>
+                <img alt="제이에스엘인재개발원㈜ 로고" src="/logo3.png">
+                <span class="truncate text-gray900 text-typo-b4-14">대전 중구 외 5</span></span></div><div class="chip-wrap"><span class="truncate text-gray900 text-typo-b4-14">학원·어학원·교육원, IT컨설팅, 백엔드개발자</span>
+                <span>경력무관 • 대졸↑ • 정규직</span>
+            </div>
+            """;
+
+    @Test
+    void 잡코리아_HTML에서_지역_경력_업종을_추출한다() {
+        List<CollectedJob> jobs = JobSearchService.parseJobKorea(JOBKOREA_SAMPLE_WITH_META);
+
+        assertThat(jobs).hasSize(1);
+        assertThat(jobs.get(0).getRegion()).isEqualTo("대전 중구");
+        assertThat(jobs.get(0).getExperience()).isEqualTo("경력무관");
+        assertThat(jobs.get(0).getIndustry()).isEqualTo("학원·어학원·교육원");
+    }
+
+    @Test
+    void 잡코리아_칩이_1개뿐이면_업종은_null이다() {
+        String html = """
+                <div>목록 시작</div>
+                <div data-sentry-component="CardJob">
+                    <a href="/Recruit/GI_Read/11111?Oem_Code=1">
+                        <span class="text-typo-b1-18 text-gray900">백엔드개발자</span>
+                    </a>
+                    <img alt="테크컴퍼니 로고" src="/logo4.png">
+                    <span class="truncate text-gray900 text-typo-b4-14">대전 중구</span>
+                </div>
+                """;
+
+        List<CollectedJob> jobs = JobSearchService.parseJobKorea(html);
+
+        assertThat(jobs.get(0).getIndustry()).isNull();
     }
 }

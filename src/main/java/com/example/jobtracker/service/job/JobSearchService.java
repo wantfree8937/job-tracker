@@ -35,6 +35,12 @@ public class JobSearchService {
     private static final Pattern JOBKOREA_ID = Pattern.compile("GI_Read/(\\d+)");
     private static final Pattern JOBKOREA_TITLE = Pattern.compile("text-typo-b1-18 text-gray900\">([^<]+)</span>");
     private static final Pattern JOBKOREA_COMPANY = Pattern.compile("<img alt=\"([^\"]+?)(?:㈜|\\(주\\)| 로고)");
+    // 시도 + 시군구 (예: "대전 중구") — 시군구가 없으면 시도만 매칭
+    private static final Pattern JOBKOREA_REGION = Pattern.compile(
+            "(서울|경기|인천|대전|대구|부산|광주|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)\\s?[^\\s,<]*");
+    private static final Pattern JOBKOREA_EXPERIENCE = Pattern.compile("경력무관|신입|경력[^•,<]*");
+    // GrayChip 텍스트 (지역/업종/연봉 칩들) — 2번째 칩이 쉼표 구분 업종 리스트
+    private static final Pattern JOBKOREA_CHIP = Pattern.compile("text-typo-b4-14\">([^<]+)</span>");
 
     private final CollectedJobRepository collectedJobRepository;
     private final UserRepository userRepository;
@@ -147,6 +153,17 @@ public class JobSearchService {
             job.setCompany(item.path("company").path("name").asText());
             job.setUrl("https://www.wanted.co.kr/wd/" + id);
             job.setSource("원티드");
+
+            String region = item.path("address").path("location").asText("");
+            if (!region.isBlank()) {
+                job.setRegion(region);
+            }
+            String industry = item.path("industry_name").asText("");
+            if (!industry.isBlank()) {
+                job.setIndustry(industry);
+            }
+            // 원티드에는 경력 정보가 없음 (annual_from/to는 연봉) — experience는 null 유지
+
             jobs.add(job);
         }
         return jobs;
@@ -198,6 +215,26 @@ public class JobSearchService {
             job.setCompany(companyMatcher.group(1).trim());
             job.setUrl("https://www.jobkorea.co.kr/Recruit/GI_Read/" + id);
             job.setSource("잡코리아");
+
+            Matcher regionMatcher = JOBKOREA_REGION.matcher(card);
+            if (regionMatcher.find()) {
+                job.setRegion(regionMatcher.group());
+            }
+            Matcher experienceMatcher = JOBKOREA_EXPERIENCE.matcher(card);
+            if (experienceMatcher.find()) {
+                job.setExperience(experienceMatcher.group());
+            }
+
+            Matcher chipMatcher = JOBKOREA_CHIP.matcher(card);
+            int chipIndex = 0;
+            while (chipMatcher.find()) {
+                chipIndex++;
+                if (chipIndex == 2) {
+                    job.setIndustry(chipMatcher.group(1).split(",")[0].trim());
+                    break;
+                }
+            }
+
             jobs.add(job);
         }
         return jobs;

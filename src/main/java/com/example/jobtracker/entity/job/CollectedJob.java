@@ -35,4 +35,13 @@ public class CollectedJob {
 
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    // 지역 (예: "서울 종로구") — 출처에 없으면 null
+    private String region;
+
+    // 경력 (예: "신입", "경력무관") — 원티드는 제공하지 않아 null
+    private String experience;
+
+    // 업종 (예: "IT, 컨텐츠") — 출처에 없으면 null
+    private String industry;
 }
