@@ -150,6 +150,42 @@ class JobSearchServiceTest {
     }
 
     @Test
+    void 기존_공고에_빈_지역이_있으면_새로_수집한_지역으로_채운다() {
+        CollectedJob existing = job("백엔드 개발자", "테크컴퍼니");
+        existing.setJobKey("잡코리아:12345");
+        // region/experience/industry 미설정 (기존 DB의 빈 필드 상황 재현)
+
+        CollectedJob incoming = job("백엔드 개발자", "테크컴퍼니");
+        incoming.setJobKey("잡코리아:12345");
+        incoming.setRegion("서울 강남구");
+        incoming.setExperience("경력무관");
+        incoming.setIndustry("IT");
+
+        boolean updated = JobSearchService.fillBlankFields(existing, incoming);
+
+        assertThat(updated).isTrue();
+        assertThat(existing.getRegion()).isEqualTo("서울 강남구");
+        assertThat(existing.getExperience()).isEqualTo("경력무관");
+        assertThat(existing.getIndustry()).isEqualTo("IT");
+    }
+
+    @Test
+    void 기존_공고에_이미_값이_있으면_덮어쓰지_않는다() {
+        CollectedJob existing = job("백엔드 개발자", "테크컴퍼니");
+        existing.setJobKey("잡코리아:12345");
+        existing.setRegion("대전 중구");
+
+        CollectedJob incoming = job("백엔드 개발자", "테크컴퍼니");
+        incoming.setJobKey("잡코리아:12345");
+        incoming.setRegion("서울 강남구");
+
+        boolean updated = JobSearchService.fillBlankFields(existing, incoming);
+
+        assertThat(updated).isFalse();
+        assertThat(existing.getRegion()).isEqualTo("대전 중구");
+    }
+
+    @Test
     void 잡코리아_칩이_1개뿐이면_업종은_null이다() {
         String html = """
                 <div>목록 시작</div>

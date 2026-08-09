@@ -6,10 +6,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CollectedJobRepository extends JpaRepository<CollectedJob, Long> {
 
     boolean existsByJobKey(String jobKey);
+
+    Optional<CollectedJob> findByJobKey(String jobKey);
 
     // source, keyword는 null이면 조건을 무시한다 (필터 미적용)
     @Query("""

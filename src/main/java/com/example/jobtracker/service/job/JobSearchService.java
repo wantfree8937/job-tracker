@@ -77,7 +77,12 @@ public class JobSearchService {
         int collected = 0;
         int skipped = found.size() - matched.size();
         for (CollectedJob job : matched) {
-            if (collectedJobRepository.existsByJobKey(job.getJobKey())) {
+            var existing = collectedJobRepository.findByJobKey(job.getJobKey());
+            if (existing.isPresent()) {
+                // 이미 수집된 공고: 새로 갱신된 필드(region/experience/industry)만 빈 값을 채워준다
+                if (fillBlankFields(existing.get(), job)) {
+                    collectedJobRepository.save(existing.get());
+                }
                 skipped++;
                 continue;
             }
@@ -85,6 +90,28 @@ public class JobSearchService {
             collected++;
         }
         return new JobSearchResult(keyword, collected, skipped);
+    }
+
+    // existing의 region/experience/industry가 비어있고 incoming에 값이 있으면 채운다. 갱신 여부를 반환
+    static boolean fillBlankFields(CollectedJob existing, CollectedJob incoming) {
+        boolean updated = false;
+        if (isBlank(existing.getRegion()) && incoming.getRegion() != null) {
+            existing.setRegion(incoming.getRegion());
+            updated = true;
+        }
+        if (isBlank(existing.getExperience()) && incoming.getExperience() != null) {
+            existing.setExperience(incoming.getExperience());
+            updated = true;
+        }
+        if (isBlank(existing.getIndustry()) && incoming.getIndustry() != null) {
+            existing.setIndustry(incoming.getIndustry());
+            updated = true;
+        }
+        return updated;
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     // 제목(title) 또는 회사명(company)에 키워드가 포함된 공고만 남긴다 (대소문자 무시)
