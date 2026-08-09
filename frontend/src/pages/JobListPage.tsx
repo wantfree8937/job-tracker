@@ -26,7 +26,7 @@ const SOURCE_CLASS: Record<string, string> = {
 }
 
 export default function JobListPage({ onLogout }: { onLogout: () => void }) {
-  const [tab, setTab] = useState<'mine' | 'collected'>('mine')
+  const [tab, setTab] = useState<'mine' | 'collected'>('collected')
   const [jobs, setJobs] = useState<JobPosting[]>([])
   const [stats, setStats] = useState<JobStats>({})
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'ALL'>('ALL')
@@ -206,6 +206,13 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         <div className="tabs">
           <button
             type="button"
+            className={tab === 'collected' ? 'tab active' : 'tab'}
+            onClick={() => setTab('collected')}
+          >
+            전체 공고
+          </button>
+          <button
+            type="button"
             className={tab === 'mine' ? 'tab active' : 'tab'}
             onClick={() => {
               setTab('mine')
@@ -213,13 +220,6 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
             }}
           >
             내 공고
-          </button>
-          <button
-            type="button"
-            className={tab === 'collected' ? 'tab active' : 'tab'}
-            onClick={() => setTab('collected')}
-          >
-            전체 공고
           </button>
         </div>
 

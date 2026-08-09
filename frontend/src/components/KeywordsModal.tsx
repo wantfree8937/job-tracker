@@ -51,7 +51,11 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
       const newKeywords = keywords.filter((k) => !currentKeywords.includes(k))
 
       if (!withSearch || newKeywords.length === 0) {
-        onSaved(user.keywords)
+        // "키워드로 공고 찾기"인데 새 키워드가 없으면 검색할 게 없다는 걸 안내
+        onSaved(
+          user.keywords,
+          withSearch ? '이미 등록된 키워드예요. 새 키워드를 추가하면 공고를 가져와요!' : undefined,
+        )
         return
       }
 

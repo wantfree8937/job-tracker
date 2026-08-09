@@ -45,7 +45,8 @@ describe('JobListPage', () => {
 
     render(<JobListPage onLogout={vi.fn()} />)
 
-    // 초기 로딩: 전체 공고 표시
+    // 내 공고 탭으로 이동 후 상태 필터 칩 테스트
+    await user.click(screen.getAllByRole('button', { name: '내 공고' })[0])
     await waitFor(() => expect(screen.getByText('카카오')).toBeInTheDocument())
     expect(screen.getByText('네이버')).toBeInTheDocument()
 
@@ -88,11 +89,7 @@ describe('JobListPage', () => {
 
     render(<JobListPage onLogout={vi.fn()} />)
 
-    // 초기 화면은 "내 공고" 탭이므로 수집 공고는 아직 없다
-    expect(screen.queryByText('토스')).not.toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: '전체 공고' }))
-
+    // 초기 화면이 "전체 공고" 탭이므로 수집 공고가 바로 보인다
     await waitFor(() => expect(screen.getByText('토스')).toBeInTheDocument())
     expect(screen.getByText('백엔드 개발자')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '스크랩' })).toBeInTheDocument()
@@ -121,7 +118,6 @@ describe('JobListPage', () => {
 
     render(<JobListPage onLogout={vi.fn()} />)
 
-    await user.click(screen.getByRole('button', { name: '전체 공고' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/jobs/collected'), expect.anything()))
 
     await user.click(screen.getByRole('button', { name: '내 관심 공고' }))
@@ -163,8 +159,6 @@ describe('JobListPage', () => {
     )
 
     render(<JobListPage onLogout={vi.fn()} />)
-
-    await user.click(screen.getByRole('button', { name: '전체 공고' }))
 
     await waitFor(() => expect(screen.getByText('✓ 스크랩 완료')).toBeInTheDocument())
   })
@@ -212,8 +206,6 @@ describe('JobListPage', () => {
 
     const { container } = render(<JobListPage onLogout={vi.fn()} />)
 
-    await user.click(screen.getByRole('button', { name: '전체 공고' }))
-
     await waitFor(() => expect(screen.getByText('나중일반')).toBeInTheDocument())
 
     const cards = container.querySelectorAll('.job-card')
@@ -223,9 +215,7 @@ describe('JobListPage', () => {
     expect(cards[0].className).not.toContain('job-card-scraped')
   })
 
-  it('전체 공고 도구 모음에 정렬 기준 라벨을 표시한다', async () => {
-    const user = userEvent.setup()
-
+  it('전체 공고 도구 모음에 정렬 기준 라벨을 표시한다', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation((url: string) => {
@@ -237,8 +227,6 @@ describe('JobListPage', () => {
     )
 
     render(<JobListPage onLogout={vi.fn()} />)
-
-    await user.click(screen.getByRole('button', { name: '전체 공고' }))
 
     await waitFor(() => expect(screen.getByText('정렬: 최신 수집순')).toBeInTheDocument())
   })
@@ -256,7 +244,6 @@ describe('JobListPage', () => {
 
     render(<JobListPage onLogout={vi.fn()} />)
 
-    await user.click(screen.getByRole('button', { name: '전체 공고' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/jobs/collected'), expect.anything()))
 
     await user.selectOptions(screen.getByLabelText('검색 범위'), '회사명')
@@ -282,6 +269,8 @@ describe('JobListPage', () => {
 
     render(<JobListPage onLogout={vi.fn()} />)
 
+    // 삭제는 내 공고 탭 기능 — 탭 전환 후 확인
+    await user.click(screen.getAllByRole('button', { name: '내 공고' })[0])
     await waitFor(() => expect(screen.getByText('카카오')).toBeInTheDocument())
 
     await user.click(screen.getAllByRole('button', { name: '삭제' })[0])

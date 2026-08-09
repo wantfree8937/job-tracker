@@ -99,7 +99,7 @@ describe('LoginPage', () => {
     await waitFor(() => expect(onLogin).toHaveBeenCalled())
   })
 
-  it('회원가입 성공 메시지는 success-message 클래스로 렌더링된다', async () => {
+  it('회원가입 성공 메시지는 toast-success로 렌더링된다', async () => {
     vi.mocked(signup).mockResolvedValue({ id: 1, email: 'test@example.com', nickname: 'tester', createdAt: '2026-08-07', keywords: [] })
     vi.mocked(login).mockResolvedValue({ accessToken: 'test-token', tokenType: 'Bearer', expiresIn: 3600 })
     const user = userEvent.setup()
@@ -113,7 +113,7 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: '가입하기' }))
 
     const message = await screen.findByText('회원가입이 완료되었습니다.')
-    expect(message).toHaveClass('success-message')
+    expect(message).toHaveClass('toast-success')
   })
 
   it('비밀번호 보기 버튼을 클릭하면 input type이 text로 바뀐다', async () => {
