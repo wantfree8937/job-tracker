@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { updateKeywords, searchJobs } from '../api'
 
 interface KeywordsModalProps {
@@ -13,6 +14,13 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
   const [customInput, setCustomInput] = useState('')
   const [error, setError] = useState('')
   const [isCollecting, setIsCollecting] = useState(false)
+
+  // 에러도 맨 위 빨간 토스트로 (3초 후 자동 제거 — 모달 레이아웃 밀림 없음)
+  useEffect(() => {
+    if (!error) return
+    const timer = setTimeout(() => setError(''), 3000)
+    return () => clearTimeout(timer)
+  }, [error])
 
   const autoSave = async (keywords: string[]) => {
     setError('')
@@ -76,7 +84,8 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
     <div className="modal-overlay" onClick={isCollecting ? undefined : onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>관심 분야 설정</h2>
-        {error && <p className="error-message">{error}</p>}
+        {error &&
+          createPortal(<div className="toast toast-error">{error}</div>, document.body)}
 
         <div className="link-input-row">
           <input
