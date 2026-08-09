@@ -5,33 +5,47 @@ import { KEYWORD_OPTIONS } from '../types'
 interface KeywordsModalProps {
   currentKeywords: string[]
   onClose: () => void
-  onSaved: (keywords: string[], message?: string) => void
+  onSaved: (keywords: string[], message?: string, keepOpen?: boolean) => void
 }
 
-// 관심 분야 설정 모달
+// 관심 분야 설정 모달 (추가/삭제 시 자동 저장)
 export default function KeywordsModal({ currentKeywords, onClose, onSaved }: KeywordsModalProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set(currentKeywords))
   const [customInput, setCustomInput] = useState('')
   const [error, setError] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
+  const [isCollecting, setIsCollecting] = useState(false)
 
-  const toggle = (keyword: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev)
-      if (next.has(keyword)) {
-        next.delete(keyword)
-      } else {
-        next.add(keyword)
-      }
-      return next
-    })
+  const autoSave = async (keywords: string[]) => {
+    setError('')
+    try {
+      const user = await updateKeywords(keywords)
+      onSaved(user.keywords, '관심 분야를 저장했어요', true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.')
+    }
+  }
+
+  const updateSelected = (mutate: (next: Set<string>) => void) => {
+    const next = new Set(selected)
+    mutate(next)
+    setSelected(next)
+    autoSave(Array.from(next))
+  }
+
+  const selectOption = (keyword: string) => {
+    if (selected.has(keyword)) return
+    updateSelected((next) => next.add(keyword))
+  }
+
+  const removeKeyword = (keyword: string) => {
+    updateSelected((next) => next.delete(keyword))
   }
 
   const addCustomKeyword = () => {
     const value = customInput.trim()
     if (value.length < 2 || value.length > 20) return
     if (selected.has(value)) return
-    setSelected((prev) => new Set(prev).add(value))
+    updateSelected((next) => next.add(value))
     setCustomInput('')
   }
 
@@ -42,40 +56,24 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
     }
   }
 
-  const handleSave = async (withSearch: boolean) => {
+  const handleCollectAll = async () => {
     setError('')
     const keywords = Array.from(selected)
-    if (withSearch) setIsSearching(true)
+    setIsCollecting(true)
     try {
-      const user = await updateKeywords(keywords)
-      const newKeywords = keywords.filter((k) => !currentKeywords.includes(k))
-
-      if (!withSearch || newKeywords.length === 0) {
-        // "키워드로 공고 찾기"인데 새 키워드가 없으면 검색할 게 없다는 걸 안내
-        onSaved(
-          user.keywords,
-          withSearch ? '이미 등록된 키워드예요. 새 키워드를 추가하면 공고를 가져와요!' : undefined,
-        )
-        return
-      }
-
-      try {
-        const results = await Promise.all(newKeywords.map((k) => searchJobs(k)))
-        const totalCollected = results.reduce((sum, r) => sum + r.collected, 0)
-        const totalSkipped = results.reduce((sum, r) => sum + r.skipped, 0)
-        const skippedText = totalSkipped > 0 ? ` · 이미 ${totalSkipped}건 등록돼 있어요` : ''
-        onSaved(user.keywords, `${newKeywords.join(', ')} 공고 ${totalCollected}건을 가져왔어요!${skippedText}`)
-      } catch (searchErr) {
-        onSaved(user.keywords, searchErr instanceof Error ? searchErr.message : '공고 검색에 실패했습니다.')
-      }
+      const results = await Promise.all(keywords.map((k) => searchJobs(k)))
+      const totalCollected = results.reduce((sum, r) => sum + r.collected, 0)
+      const totalSkipped = results.reduce((sum, r) => sum + r.skipped, 0)
+      const skippedText = totalSkipped > 0 ? ` · 이미 ${totalSkipped}건 등록돼 있어요` : ''
+      onSaved(keywords, `${keywords.length}개 키워드 공고 ${totalCollected}건을 가져왔어요!${skippedText}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.')
+      setError(err instanceof Error ? err.message : '공고 검색에 실패했습니다.')
     } finally {
-      setIsSearching(false)
+      setIsCollecting(false)
     }
   }
 
-  const customKeywords = Array.from(selected).filter((k) => !KEYWORD_OPTIONS.includes(k))
+  const selectedKeywords = Array.from(selected)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -88,7 +86,7 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
               key={keyword}
               type="button"
               className={selected.has(keyword) ? 'chip active' : 'chip'}
-              onClick={() => toggle(keyword)}
+              onClick={() => selectOption(keyword)}
             >
               {keyword}
             </button>
@@ -108,10 +106,10 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
           </button>
         </div>
 
-        {customKeywords.length > 0 && (
+        {selectedKeywords.length > 0 && (
           <div className="status-filters">
-            {customKeywords.map((keyword) => (
-              <button key={keyword} type="button" className="chip active" onClick={() => toggle(keyword)}>
+            {selectedKeywords.map((keyword) => (
+              <button key={keyword} type="button" className="chip active" onClick={() => removeKeyword(keyword)}>
                 {keyword} ×
               </button>
             ))}
@@ -119,14 +117,16 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
         )}
 
         <div className="modal-actions">
-          <button type="button" className="outline-button" onClick={onClose} disabled={isSearching}>
-            취소
+          <button type="button" className="outline-button" onClick={onClose} disabled={isCollecting}>
+            닫기
           </button>
-          <button type="button" className="outline-button" onClick={() => handleSave(false)} disabled={isSearching}>
-            저장
-          </button>
-          <button type="button" className="primary-button" onClick={() => handleSave(true)} disabled={isSearching}>
-            {isSearching ? '공고 불러오는 중...' : '키워드로 공고 찾기'}
+          <button
+            type="button"
+            className="primary-button"
+            onClick={handleCollectAll}
+            disabled={isCollecting || selectedKeywords.length === 0}
+          >
+            {isCollecting ? '공고 불러오는 중...' : '키워드로 공고 찾기'}
           </button>
         </div>
       </div>

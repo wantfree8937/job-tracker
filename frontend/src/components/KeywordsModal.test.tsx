@@ -8,17 +8,7 @@ describe('KeywordsModal', () => {
     vi.unstubAllGlobals()
   })
 
-  it('직접 입력 후 추가 버튼을 누르면 태그가 생성된다', async () => {
-    const user = userEvent.setup()
-    render(<KeywordsModal currentKeywords={[]} onClose={vi.fn()} onSaved={vi.fn()} />)
-
-    await user.type(screen.getByPlaceholderText('직접 입력 (2~20자)'), '게임 개발')
-    await user.click(screen.getByRole('button', { name: '추가' }))
-
-    expect(screen.getByRole('button', { name: '게임 개발 ×' })).toBeInTheDocument()
-  })
-
-  it('키워드로 공고 찾기를 누르면 새 키워드로 searchJobs를 호출하고 결과 메시지를 전달한다', async () => {
+  it('직접 입력 후 추가 버튼을 누르면 태그가 생성되고 자동 저장된다', async () => {
     const user = userEvent.setup()
     const onSaved = vi.fn()
 
@@ -32,9 +22,6 @@ describe('KeywordsModal', () => {
             json: async () => ({ id: 1, email: 't@t.com', nickname: 'tester', createdAt: '2026-01-01', keywords: ['게임 개발'] }),
           })
         }
-        if (url.includes('/jobs/collect/search')) {
-          return Promise.resolve({ ok: true, status: 200, json: async () => ({ keyword: '게임 개발', collected: 22, skipped: 0 }) })
-        }
         return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
       }),
     )
@@ -43,12 +30,19 @@ describe('KeywordsModal', () => {
 
     await user.type(screen.getByPlaceholderText('직접 입력 (2~20자)'), '게임 개발')
     await user.click(screen.getByRole('button', { name: '추가' }))
-    await user.click(screen.getByRole('button', { name: '키워드로 공고 찾기' }))
 
-    expect(onSaved).toHaveBeenCalledWith(['게임 개발'], '게임 개발 공고 22건을 가져왔어요!')
+    expect(screen.getByRole('button', { name: '게임 개발 ×' })).toBeInTheDocument()
+    await waitFor(() =>
+      expect(onSaved).toHaveBeenCalledWith(['게임 개발'], '관심 분야를 저장했어요', true),
+    )
   })
 
-  it('이미 등록된 공고가 있으면 skipped 건수를 메시지에 포함한다', async () => {
+  it('저장 버튼이 없다', () => {
+    render(<KeywordsModal currentKeywords={[]} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.queryByRole('button', { name: '저장' })).not.toBeInTheDocument()
+  })
+
+  it('추천 키워드 칩을 클릭하면 selected에 추가되고 자동 저장된다', async () => {
     const user = userEvent.setup()
     const onSaved = vi.fn()
 
@@ -59,11 +53,8 @@ describe('KeywordsModal', () => {
           return Promise.resolve({
             ok: true,
             status: 200,
-            json: async () => ({ id: 1, email: 't@t.com', nickname: 'tester', createdAt: '2026-01-01', keywords: ['청소'] }),
+            json: async () => ({ id: 1, email: 't@t.com', nickname: 'tester', createdAt: '2026-01-01', keywords: ['백엔드'] }),
           })
-        }
-        if (url.includes('/jobs/collect/search')) {
-          return Promise.resolve({ ok: true, status: 200, json: async () => ({ keyword: '청소', collected: 0, skipped: 21 }) })
         }
         return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
       }),
@@ -71,11 +62,85 @@ describe('KeywordsModal', () => {
 
     render(<KeywordsModal currentKeywords={[]} onClose={vi.fn()} onSaved={onSaved} />)
 
-    await user.type(screen.getByPlaceholderText('직접 입력 (2~20자)'), '청소')
-    await user.click(screen.getByRole('button', { name: '추가' }))
+    const option = screen.getByRole('button', { name: '백엔드' })
+    await user.click(option)
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(['백엔드'], '관심 분야를 저장했어요', true))
+  })
+
+  it('선택된 키워드의 × 버튼을 누르면 삭제되고 자동 저장된다', async () => {
+    const user = userEvent.setup()
+    const onSaved = vi.fn()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/auth/me/keywords')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ id: 1, email: 't@t.com', nickname: 'tester', createdAt: '2026-01-01', keywords: [] }),
+          })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+      }),
+    )
+
+    render(<KeywordsModal currentKeywords={['게임 개발']} onClose={vi.fn()} onSaved={onSaved} />)
+
+    expect(screen.getByRole('button', { name: '게임 개발 ×' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '게임 개발 ×' }))
+
+    expect(screen.queryByRole('button', { name: '게임 개발 ×' })).not.toBeInTheDocument()
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith([], '관심 분야를 저장했어요', true))
+  })
+
+  it('키워드로 공고 찾기를 누르면 내 모든 키워드로 searchJobs를 호출하고 결과 메시지를 전달한다', async () => {
+    const user = userEvent.setup()
+    const onSaved = vi.fn()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/collect/search')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ keyword: '게임 개발', collected: 22, skipped: 0 }) })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+      }),
+    )
+
+    render(<KeywordsModal currentKeywords={['게임 개발']} onClose={vi.fn()} onSaved={onSaved} />)
+
     await user.click(screen.getByRole('button', { name: '키워드로 공고 찾기' }))
 
-    expect(onSaved).toHaveBeenCalledWith(['청소'], '청소 공고 0건을 가져왔어요! · 이미 21건 등록돼 있어요')
+    expect(onSaved).toHaveBeenCalledWith(['게임 개발'], '1개 키워드 공고 22건을 가져왔어요!')
+  })
+
+  it('이미 등록된 공고가 있으면 skipped 건수를 메시지에 포함한다', async () => {
+    const user = userEvent.setup()
+    const onSaved = vi.fn()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/collect/search')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ keyword: '청소', collected: 0, skipped: 21 }) })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+      }),
+    )
+
+    render(<KeywordsModal currentKeywords={['청소']} onClose={vi.fn()} onSaved={onSaved} />)
+
+    await user.click(screen.getByRole('button', { name: '키워드로 공고 찾기' }))
+
+    expect(onSaved).toHaveBeenCalledWith(['청소'], '1개 키워드 공고 0건을 가져왔어요! · 이미 21건 등록돼 있어요')
+  })
+
+  it('키워드가 없으면 키워드로 공고 찾기 버튼이 비활성화된다', () => {
+    render(<KeywordsModal currentKeywords={[]} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByRole('button', { name: '키워드로 공고 찾기' })).toBeDisabled()
   })
 
   it('키워드로 공고 찾기 진행 중에는 버튼이 비활성화되고 로딩 텍스트를 보여준다', async () => {
@@ -90,13 +155,6 @@ describe('KeywordsModal', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation((url: string) => {
-        if (url.includes('/auth/me/keywords')) {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({ id: 1, email: 't@t.com', nickname: 'tester', createdAt: '2026-01-01', keywords: ['게임 개발'] }),
-          })
-        }
         if (url.includes('/jobs/collect/search')) {
           return searchPromise.then((body) => ({ ok: true, status: 200, json: async () => body }))
         }
@@ -104,16 +162,13 @@ describe('KeywordsModal', () => {
       }),
     )
 
-    render(<KeywordsModal currentKeywords={[]} onClose={vi.fn()} onSaved={onSaved} />)
+    render(<KeywordsModal currentKeywords={['게임 개발']} onClose={vi.fn()} onSaved={onSaved} />)
 
-    await user.type(screen.getByPlaceholderText('직접 입력 (2~20자)'), '게임 개발')
-    await user.click(screen.getByRole('button', { name: '추가' }))
     await user.click(screen.getByRole('button', { name: '키워드로 공고 찾기' }))
 
     const loadingButton = await screen.findByRole('button', { name: '공고 불러오는 중...' })
     expect(loadingButton).toBeDisabled()
-    expect(screen.getByRole('button', { name: '취소' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: '저장' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '닫기' })).toBeDisabled()
 
     resolveSearch!({ keyword: '게임 개발', collected: 22, skipped: 0 })
 

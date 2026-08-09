@@ -178,9 +178,9 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     }
   }
 
-  const handleKeywordsSaved = (newKeywords: string[], message?: string) => {
+  const handleKeywordsSaved = (newKeywords: string[], message?: string, keepOpen?: boolean) => {
     setKeywords(newKeywords)
-    setIsKeywordsModalOpen(false)
+    if (!keepOpen) setIsKeywordsModalOpen(false)
     setKeywordsMessage(message ?? '관심 분야를 저장했어요')
     if (tab === 'collected' && (mineOnly || message)) loadCollected()
   }
