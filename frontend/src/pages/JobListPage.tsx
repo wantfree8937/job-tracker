@@ -281,6 +281,11 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                     <StatusBadge status={job.status} />
                   </div>
                   <p className="job-position" title={job.position}>{job.position}</p>
+                  {(job.region || job.experience || job.industry) && (
+                    <p className="job-meta">
+                      {[job.region, job.experience, job.industry].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
                   {job.deadline && <p className="job-deadline">마감일: {job.deadline}</p>}
                   {job.memo && <p className="job-memo">{job.memo}</p>}
                   <div className="job-card-footer">

@@ -22,6 +22,18 @@ const jobB: JobPosting = {
   updatedAt: '2026-01-01T00:00:00Z',
 }
 
+const jobWithMeta: JobPosting = {
+  id: 3,
+  companyName: '라인',
+  position: '백엔드 개발자',
+  status: 'WISH',
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
+  region: '서울 송파구',
+  experience: '신입',
+  industry: '광고·홍보·전시',
+}
+
 describe('JobListPage', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -55,6 +67,26 @@ describe('JobListPage', () => {
 
     await waitFor(() => expect(screen.queryByText('카카오')).not.toBeInTheDocument())
     expect(screen.getByText('네이버')).toBeInTheDocument()
+  })
+
+  it('내 공고 카드에 지역·경력·업종이 있으면 표시한다', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/stats')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => [jobWithMeta] })
+      }),
+    )
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await screen.findAllByRole('button', { name: '내 공고' })
+    const user = userEvent.setup()
+    await user.click(screen.getAllByRole('button', { name: '내 공고' })[0])
+
+    await waitFor(() => expect(screen.getByText('서울 송파구 · 신입 · 광고·홍보·전시')).toBeInTheDocument())
   })
 
   it('전체 공고 탭으로 전환하면 수집 공고 목록을 조회해 보여준다', async () => {

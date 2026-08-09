@@ -22,6 +22,9 @@ export interface JobPosting {
   memo?: string
   createdAt: string
   updatedAt: string
+  region?: string
+  experience?: string
+  industry?: string
 }
 
 export interface AuthResponse {

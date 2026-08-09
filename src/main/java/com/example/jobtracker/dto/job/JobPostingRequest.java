@@ -13,6 +13,9 @@ public record JobPostingRequest(
         @Size(max = 500) String link,
         LocalDate deadline,
         ApplicationStatus status,
-        @Size(max = 2000) String memo
+        @Size(max = 2000) String memo,
+        String region,
+        String experience,
+        String industry
 ) {
 }

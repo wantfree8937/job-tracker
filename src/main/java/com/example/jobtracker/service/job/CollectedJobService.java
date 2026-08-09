@@ -156,7 +156,10 @@ public class CollectedJobService {
                 collected.getUrl(),
                 null,
                 ApplicationStatus.WISH,
-                "자동 수집: " + collected.getSource()
+                "자동 수집: " + collected.getSource(),
+                collected.getRegion(),
+                collected.getExperience(),
+                collected.getIndustry()
         );
         return jobPostingService.create(email, request);
     }

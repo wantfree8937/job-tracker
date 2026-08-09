@@ -39,6 +39,9 @@ public class JobPostingService {
         job.setLink(request.link());
         job.setDeadline(request.deadline());
         job.setMemo(request.memo());
+        job.setRegion(request.region());
+        job.setExperience(request.experience());
+        job.setIndustry(request.industry());
         if (request.status() != null) {
             job.setStatus(request.status());
         }

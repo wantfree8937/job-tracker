@@ -37,6 +37,11 @@ public class JobPosting {
 
     private String memo;
 
+    // 지역·경력·업종 (스크랩 시 CollectedJob에서 복사, 직접 등록한 공고는 null)
+    private String region;
+    private String experience;
+    private String industry;
+
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 

@@ -2,6 +2,8 @@ package com.example.jobtracker.controller.job;
 
 import com.example.jobtracker.dto.auth.LoginRequest;
 import com.example.jobtracker.dto.auth.SignUpRequest;
+import com.example.jobtracker.entity.job.CollectedJob;
+import com.example.jobtracker.repository.job.CollectedJobRepository;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,6 +39,9 @@ class CollectedJobControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private CollectedJobRepository collectedJobRepository;
 
     @BeforeAll
     static void backupExistingDataFile() throws Exception {
@@ -191,6 +196,29 @@ class CollectedJobControllerTest {
 
         mockMvc.perform(post("/api/jobs/collected/" + id + "/scrap").header("Authorization", "Bearer " + token))
                 .andExpect(status().isConflict());
+    }
+
+    // ⑤-2 스크랩 시 수집 공고의 지역·경력·업종이 내 공고로 복사된다
+    @Test
+    void scrapCopiesRegionExperienceIndustryTest() throws Exception {
+        String token = signUpAndLogin("scrap-meta@test.com");
+
+        CollectedJob collected = new CollectedJob();
+        collected.setJobKey("test:" + UUID.randomUUID());
+        collected.setCompany("메타회사");
+        collected.setTitle("백엔드 개발자");
+        collected.setUrl("https://meta.example.com/" + UUID.randomUUID());
+        collected.setSource("잡코리아");
+        collected.setRegion("서울 송파구");
+        collected.setExperience("신입");
+        collected.setIndustry("광고·홍보·전시");
+        Long id = collectedJobRepository.save(collected).getId();
+
+        mockMvc.perform(post("/api/jobs/collected/" + id + "/scrap").header("Authorization", "Bearer " + token))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.region").value("서울 송파구"))
+                .andExpect(jsonPath("$.experience").value("신입"))
+                .andExpect(jsonPath("$.industry").value("광고·홍보·전시"));
     }
 
     // ⑤-1 스크랩한 공고는 scrapedByMe=true, 안 한 공고는 false

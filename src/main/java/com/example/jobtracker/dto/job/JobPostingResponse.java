@@ -15,7 +15,10 @@ public record JobPostingResponse(
         String status,
         String memo,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        String region,
+        String experience,
+        String industry
 ) {
     public static JobPostingResponse from(JobPosting job) {
         return new JobPostingResponse(
@@ -27,7 +30,10 @@ public record JobPostingResponse(
                 job.getStatus().name(),
                 job.getMemo(),
                 job.getCreatedAt(),
-                job.getUpdatedAt()
+                job.getUpdatedAt(),
+                job.getRegion(),
+                job.getExperience(),
+                job.getIndustry()
         );
     }
 }
