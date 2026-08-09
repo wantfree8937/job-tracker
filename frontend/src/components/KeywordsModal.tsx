@@ -25,7 +25,6 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
   }
 
   const updateSelected = (mutate: (next: Set<string>) => void) => {
-    setSuccessMessage('')
     const next = new Set(selected)
     mutate(next)
     setSelected(next)
@@ -39,7 +38,6 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
   const addCustomKeyword = () => {
     const value = customInput.trim()
     if (value.length < 2 || value.length > 20 || !/^[가-힣a-zA-Z0-9\s]+$/.test(value)) {
-      setSuccessMessage('')
       setError('키워드는 2~20자, 한글/영문/숫자/공백만 사용할 수 있어요')
       return
     }
@@ -57,7 +55,6 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
 
   const handleCollectAll = async () => {
     setError('')
-    setSuccessMessage('')
     const keywords = Array.from(selected)
     setIsCollecting(true)
     try {
