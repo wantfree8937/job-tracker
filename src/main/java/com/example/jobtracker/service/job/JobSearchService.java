@@ -185,7 +185,7 @@ public class JobSearchService {
             if (!region.isBlank()) {
                 job.setRegion(region);
             }
-            String industry = item.path("industry_name").asText("");
+            String industry = item.path("company").path("industry_name").asText("");
             if (!industry.isBlank()) {
                 job.setIndustry(industry);
             }

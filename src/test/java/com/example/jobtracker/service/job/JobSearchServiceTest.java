@@ -78,9 +78,9 @@ class JobSearchServiceTest {
     void 원티드_JSON에서_지역과_업종을_추출한다() {
         String json = """
                 {"data":[
-                    {"id":333,"position":"백엔드 개발자","company":{"name":"원티드랩"},
+                    {"id":333,"position":"백엔드 개발자","company":{"name":"원티드랩","industry_name":"IT, 컨텐츠"},
                      "address":{"location":"서울","district":"종로구"},
-                     "annual_from":3,"annual_to":5,"industry_name":"IT, 컨텐츠"}
+                     "annual_from":3,"annual_to":5}
                 ]}
                 """;
 
