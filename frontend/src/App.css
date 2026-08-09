@@ -562,6 +562,14 @@
 }
 .link-input-row input {
   flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--surface);
+}
+.link-input-row input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .modal-actions {

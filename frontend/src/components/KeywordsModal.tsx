@@ -43,7 +43,10 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
 
   const addCustomKeyword = () => {
     const value = customInput.trim()
-    if (value.length < 2 || value.length > 20) return
+    if (value.length < 2 || value.length > 20 || !/^[가-힣a-zA-Z0-9\s]+$/.test(value)) {
+      setError('키워드는 2~20자, 한글/영문/숫자/공백만 사용할 수 있어요')
+      return
+    }
     if (selected.has(value)) return
     updateSelected((next) => next.add(value))
     setCustomInput('')
