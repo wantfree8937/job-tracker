@@ -215,7 +215,7 @@ describe('JobListPage', () => {
     expect(cards[0].className).not.toContain('job-card-scraped')
   })
 
-  it('전체 공고 도구 모음에 정렬 기준 라벨을 표시한다', () => {
+  it('전체 공고 도구 모음에 정렬 기준 라벨을 표시한다', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation((url: string) => {
