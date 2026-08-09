@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { updateKeywords, searchJobs } from '../api'
-import { KEYWORD_OPTIONS } from '../types'
 
 interface KeywordsModalProps {
   currentKeywords: string[]
@@ -13,12 +12,14 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
   const [selected, setSelected] = useState<Set<string>>(new Set(currentKeywords))
   const [customInput, setCustomInput] = useState('')
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [isCollecting, setIsCollecting] = useState(false)
 
   const autoSave = async (keywords: string[]) => {
     setError('')
     try {
       const user = await updateKeywords(keywords)
+      setSuccessMessage('관심 분야를 저장했어요')
       onSaved(user.keywords, '관심 분야를 저장했어요', true)
     } catch (err) {
       setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.')
@@ -26,15 +27,11 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
   }
 
   const updateSelected = (mutate: (next: Set<string>) => void) => {
+    setSuccessMessage('')
     const next = new Set(selected)
     mutate(next)
     setSelected(next)
     autoSave(Array.from(next))
-  }
-
-  const selectOption = (keyword: string) => {
-    if (selected.has(keyword)) return
-    updateSelected((next) => next.add(keyword))
   }
 
   const removeKeyword = (keyword: string) => {
@@ -44,6 +41,7 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
   const addCustomKeyword = () => {
     const value = customInput.trim()
     if (value.length < 2 || value.length > 20 || !/^[가-힣a-zA-Z0-9\s]+$/.test(value)) {
+      setSuccessMessage('')
       setError('키워드는 2~20자, 한글/영문/숫자/공백만 사용할 수 있어요')
       return
     }
@@ -61,6 +59,7 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
 
   const handleCollectAll = async () => {
     setError('')
+    setSuccessMessage('')
     const keywords = Array.from(selected)
     setIsCollecting(true)
     try {
@@ -68,7 +67,7 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
       const totalCollected = results.reduce((sum, r) => sum + r.collected, 0)
       const totalSkipped = results.reduce((sum, r) => sum + r.skipped, 0)
       const skippedText = totalSkipped > 0 ? ` · 이미 ${totalSkipped}건 등록돼 있어요` : ''
-      onSaved(keywords, `${keywords.length}개 키워드 공고 ${totalCollected}건을 가져왔어요!${skippedText}`)
+      onSaved(keywords, `${keywords.length}개 키워드 공고 ${totalCollected}건을 가져왔어요!${skippedText}`, false)
     } catch (err) {
       setError(err instanceof Error ? err.message : '공고 검색에 실패했습니다.')
     } finally {
@@ -79,22 +78,11 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
   const selectedKeywords = Array.from(selected)
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={isCollecting ? undefined : onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>관심 분야 설정</h2>
         {error && <p className="error-message">{error}</p>}
-        <div className="status-filters">
-          {KEYWORD_OPTIONS.map((keyword) => (
-            <button
-              key={keyword}
-              type="button"
-              className={selected.has(keyword) ? 'chip active' : 'chip'}
-              onClick={() => selectOption(keyword)}
-            >
-              {keyword}
-            </button>
-          ))}
-        </div>
+        {!error && successMessage && <p className="success-message">{successMessage}</p>}
 
         <div className="link-input-row">
           <input

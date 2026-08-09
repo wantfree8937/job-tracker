@@ -42,30 +42,9 @@ describe('KeywordsModal', () => {
     expect(screen.queryByRole('button', { name: '저장' })).not.toBeInTheDocument()
   })
 
-  it('추천 키워드 칩을 클릭하면 selected에 추가되고 자동 저장된다', async () => {
-    const user = userEvent.setup()
-    const onSaved = vi.fn()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockImplementation((url: string) => {
-        if (url.includes('/auth/me/keywords')) {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({ id: 1, email: 't@t.com', nickname: 'tester', createdAt: '2026-01-01', keywords: ['백엔드'] }),
-          })
-        }
-        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
-      }),
-    )
-
-    render(<KeywordsModal currentKeywords={[]} onClose={vi.fn()} onSaved={onSaved} />)
-
-    const option = screen.getByRole('button', { name: '백엔드' })
-    await user.click(option)
-
-    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(['백엔드'], '관심 분야를 저장했어요', true))
+  it('추천 키워드 칩이 없다', () => {
+    render(<KeywordsModal currentKeywords={[]} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.queryByRole('button', { name: '백엔드' })).not.toBeInTheDocument()
   })
 
   it('선택된 키워드의 × 버튼을 누르면 삭제되고 자동 저장된다', async () => {
@@ -114,7 +93,7 @@ describe('KeywordsModal', () => {
 
     await user.click(screen.getByRole('button', { name: '키워드로 공고 찾기' }))
 
-    expect(onSaved).toHaveBeenCalledWith(['게임 개발'], '1개 키워드 공고 22건을 가져왔어요!')
+    expect(onSaved).toHaveBeenCalledWith(['게임 개발'], '1개 키워드 공고 22건을 가져왔어요!', false)
   })
 
   it('이미 등록된 공고가 있으면 skipped 건수를 메시지에 포함한다', async () => {
@@ -135,7 +114,7 @@ describe('KeywordsModal', () => {
 
     await user.click(screen.getByRole('button', { name: '키워드로 공고 찾기' }))
 
-    expect(onSaved).toHaveBeenCalledWith(['청소'], '1개 키워드 공고 0건을 가져왔어요! · 이미 21건 등록돼 있어요')
+    expect(onSaved).toHaveBeenCalledWith(['청소'], '1개 키워드 공고 0건을 가져왔어요! · 이미 21건 등록돼 있어요', false)
   })
 
   it('키워드가 없으면 키워드로 공고 찾기 버튼이 비활성화된다', () => {
