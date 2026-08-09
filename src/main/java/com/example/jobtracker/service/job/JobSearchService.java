@@ -1,5 +1,6 @@
 package com.example.jobtracker.service.job;
 
+import com.example.jobtracker.dto.job.BackfillExperienceResult;
 import com.example.jobtracker.dto.job.JobSearchResult;
 import com.example.jobtracker.entity.job.CollectedJob;
 import com.example.jobtracker.entity.user.User;
@@ -273,6 +274,31 @@ public class JobSearchService {
             jobs.add(job);
         }
         return jobs;
+    }
+
+    // 경력 정보가 없는 기존 수집 공고를 제목에서 추출해 일괄로 채운다 (소스 무관)
+    @Transactional
+    public BackfillExperienceResult backfillExperience() {
+        int processed = 0;
+        int filled = 0;
+        for (CollectedJob job : collectedJobRepository.findAll()) {
+            if (!isBlank(job.getExperience()) || job.getTitle() == null) {
+                continue;
+            }
+            processed++;
+            String experience = extractExperienceFromTitle(job.getTitle());
+            if (experience != null) {
+                job.setExperience(experience);
+                filled++;
+            }
+        }
+        return new BackfillExperienceResult(processed, filled);
+    }
+
+    // 제목에서 경력 패턴을 추출한다 (없으면 null)
+    static String extractExperienceFromTitle(String title) {
+        Matcher matcher = WANTED_EXPERIENCE.matcher(title);
+        return matcher.find() ? matcher.group() : null;
     }
 
     // 모든 사용자의 관심 키워드를 중복 제거해 반환한다 (크롤러용, 개인정보 없음)

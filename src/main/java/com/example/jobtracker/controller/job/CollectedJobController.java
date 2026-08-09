@@ -60,4 +60,10 @@ public class CollectedJobController {
     public ResponseEntity<List<String>> keywords() {
         return ResponseEntity.ok(jobSearchService.findAllKeywords());
     }
+
+    // 경력 정보가 없는 기존 수집 공고를 제목에서 추출해 일괄로 채운다
+    @PostMapping("/collected/backfill-experience")
+    public ResponseEntity<BackfillExperienceResult> backfillExperience() {
+        return ResponseEntity.ok(jobSearchService.backfillExperience());
+    }
 }

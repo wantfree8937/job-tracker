@@ -207,6 +207,20 @@ class JobSearchServiceTest {
     }
 
     @Test
+    void 제목에서_경력_패턴을_추출해_백필한다() {
+        String experience = JobSearchService.extractExperienceFromTitle("백엔드 개발자 (3년 이상)");
+
+        assertThat(experience).isEqualTo("3년 이상");
+    }
+
+    @Test
+    void 제목에_경력_패턴이_없으면_null을_반환한다() {
+        String experience = JobSearchService.extractExperienceFromTitle("디자이너 채용");
+
+        assertThat(experience).isNull();
+    }
+
+    @Test
     void 잡코리아_칩이_1개뿐이면_업종은_null이다() {
         String html = """
                 <div>목록 시작</div>
