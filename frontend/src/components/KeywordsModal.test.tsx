@@ -33,7 +33,7 @@ describe('KeywordsModal', () => {
 
     expect(screen.getByRole('button', { name: '게임 개발 ×' })).toBeInTheDocument()
     await waitFor(() =>
-      expect(onSaved).toHaveBeenCalledWith(['게임 개발'], undefined, true),
+      expect(onSaved).toHaveBeenCalledWith(['게임 개발'], '관심 분야를 저장했어요', true),
     )
   })
 
@@ -72,7 +72,7 @@ describe('KeywordsModal', () => {
     await user.click(screen.getByRole('button', { name: '게임 개발 ×' }))
 
     expect(screen.queryByRole('button', { name: '게임 개발 ×' })).not.toBeInTheDocument()
-    await waitFor(() => expect(onSaved).toHaveBeenCalledWith([], undefined, true))
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith([], '관심 분야를 저장했어요', true))
   })
 
   it('키워드로 공고 찾기를 누르면 내 모든 키워드로 searchJobs를 호출하고 결과 메시지를 전달한다', async () => {

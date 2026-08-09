@@ -12,15 +12,13 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
   const [selected, setSelected] = useState<Set<string>>(new Set(currentKeywords))
   const [customInput, setCustomInput] = useState('')
   const [error, setError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
   const [isCollecting, setIsCollecting] = useState(false)
 
   const autoSave = async (keywords: string[]) => {
     setError('')
     try {
       const user = await updateKeywords(keywords)
-      setSuccessMessage('관심 분야를 저장했어요')
-      onSaved(user.keywords, undefined, true) // 상단 토스트는 띄우지 않는다 (모달 안 메시지만)
+      onSaved(user.keywords, '관심 분야를 저장했어요', true) // 맨 위 토스트로 안내
     } catch (err) {
       setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.')
     }
@@ -82,7 +80,6 @@ export default function KeywordsModal({ currentKeywords, onClose, onSaved }: Key
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>관심 분야 설정</h2>
         {error && <p className="error-message">{error}</p>}
-        {!error && successMessage && <p className="success-message">{successMessage}</p>}
 
         <div className="link-input-row">
           <input
