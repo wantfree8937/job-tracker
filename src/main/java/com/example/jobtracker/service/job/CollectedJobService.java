@@ -159,7 +159,8 @@ public class CollectedJobService {
                 "자동 수집: " + collected.getSource(),
                 collected.getRegion(),
                 collected.getExperience(),
-                collected.getIndustry()
+                collected.getIndustry(),
+                collected.getSource()
         );
         return jobPostingService.create(email, request);
     }

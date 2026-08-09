@@ -18,7 +18,8 @@ public record JobPostingResponse(
         LocalDateTime updatedAt,
         String region,
         String experience,
-        String industry
+        String industry,
+        String source
 ) {
     public static JobPostingResponse from(JobPosting job) {
         return new JobPostingResponse(
@@ -33,7 +34,8 @@ public record JobPostingResponse(
                 job.getUpdatedAt(),
                 job.getRegion(),
                 job.getExperience(),
-                job.getIndustry()
+                job.getIndustry(),
+                job.getSource()
         );
     }
 }

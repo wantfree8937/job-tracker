@@ -42,6 +42,9 @@ public class JobPosting {
     private String experience;
     private String industry;
 
+    // 출처 (잡코리아/원티드) — 직접 등록 시 null
+    private String source;
+
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 

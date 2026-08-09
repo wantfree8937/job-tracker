@@ -42,6 +42,7 @@ public class JobPostingService {
         job.setRegion(request.region());
         job.setExperience(request.experience());
         job.setIndustry(request.industry());
+        job.setSource(request.source());
         if (request.status() != null) {
             job.setStatus(request.status());
         }

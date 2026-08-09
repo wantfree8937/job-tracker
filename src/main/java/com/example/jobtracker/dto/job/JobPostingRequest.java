@@ -16,6 +16,7 @@ public record JobPostingRequest(
         @Size(max = 2000) String memo,
         String region,
         String experience,
-        String industry
+        String industry,
+        String source
 ) {
 }
