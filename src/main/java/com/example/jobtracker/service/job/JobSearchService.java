@@ -41,7 +41,7 @@ public class JobSearchService {
     private static final Pattern JOBKOREA_EXPERIENCE = Pattern.compile("경력무관|신입|경력[^•,<]*");
     // 원티드는 경력 전용 필드가 없어 제목에서 추출 (예: "안드로이드 개발자 (3년 이상)", "프로그래머(신입)")
     private static final Pattern WANTED_EXPERIENCE =
-            Pattern.compile("경력무관|신입|\\d+년 이상|\\d+년차|경력 \\d+년|\\d+~\\d+년");
+            Pattern.compile("경력무관|신입|시니어|주니어|미들|\\d+년 이상|\\d+년차|경력 \\d+년|\\d+~\\d+년");
     // GrayChip 텍스트 (지역/업종/연봉 칩들) — 2번째 칩이 쉼표 구분 업종 리스트
     private static final Pattern JOBKOREA_CHIP = Pattern.compile("text-typo-b4-14\">([^<]+)</span>");
 

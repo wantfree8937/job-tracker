@@ -98,7 +98,8 @@ class JobSearchServiceTest {
                     {"id":1,"position":"안드로이드 개발자 (3년 이상)","company":{"name":"A"}},
                     {"id":2,"position":"프로그래머(신입)","company":{"name":"B"}},
                     {"id":3,"position":"백엔드 개발자 (경력무관)","company":{"name":"C"}},
-                    {"id":4,"position":"디자이너","company":{"name":"D"}}
+                    {"id":4,"position":"디자이너","company":{"name":"D"}},
+                    {"id":5,"position":"안드로이드 시니어 개발자","company":{"name":"E"}}
                 ]}
                 """;
 
@@ -108,6 +109,7 @@ class JobSearchServiceTest {
         assertThat(jobs.get(1).getExperience()).isEqualTo("신입");
         assertThat(jobs.get(2).getExperience()).isEqualTo("경력무관");
         assertThat(jobs.get(3).getExperience()).isNull();
+        assertThat(jobs.get(4).getExperience()).isEqualTo("시니어");
     }
 
     private static final String JOBKOREA_SAMPLE_HTML = """
