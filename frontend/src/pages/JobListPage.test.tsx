@@ -58,8 +58,6 @@ describe('JobListPage', () => {
   })
 
   it('전체 공고 탭으로 전환하면 수집 공고 목록을 조회해 보여준다', async () => {
-    const user = userEvent.setup()
-
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation((url: string) => {
@@ -128,8 +126,6 @@ describe('JobListPage', () => {
   })
 
   it('scrapedByMe가 true인 수집 공고는 새로고침 후에도 스크랩 완료 상태로 표시된다', async () => {
-    const user = userEvent.setup()
-
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation((url: string) => {
@@ -164,8 +160,6 @@ describe('JobListPage', () => {
   })
 
   it('스크랩 완료 공고는 목록 아래로 정렬되고 흐리게 표시된다', async () => {
-    const user = userEvent.setup()
-
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation((url: string) => {
