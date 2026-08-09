@@ -39,6 +39,9 @@ public class JobSearchService {
     private static final Pattern JOBKOREA_REGION = Pattern.compile(
             "(서울|경기|인천|대전|대구|부산|광주|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)\\s?[^\\s,<]*");
     private static final Pattern JOBKOREA_EXPERIENCE = Pattern.compile("경력무관|신입|경력[^•,<]*");
+    // 원티드는 경력 전용 필드가 없어 제목에서 추출 (예: "안드로이드 개발자 (3년 이상)", "프로그래머(신입)")
+    private static final Pattern WANTED_EXPERIENCE =
+            Pattern.compile("경력무관|신입|\\d+년 이상|\\d+년차|경력 \\d+년|\\d+~\\d+년");
     // GrayChip 텍스트 (지역/업종/연봉 칩들) — 2번째 칩이 쉼표 구분 업종 리스트
     private static final Pattern JOBKOREA_CHIP = Pattern.compile("text-typo-b4-14\">([^<]+)</span>");
 
@@ -176,7 +179,8 @@ public class JobSearchService {
             long id = item.path("id").asLong();
             CollectedJob job = new CollectedJob();
             job.setJobKey("원티드:" + id);
-            job.setTitle(item.path("position").asText());
+            String position = item.path("position").asText();
+            job.setTitle(position);
             job.setCompany(item.path("company").path("name").asText());
             job.setUrl("https://www.wanted.co.kr/wd/" + id);
             job.setSource("원티드");
@@ -189,7 +193,11 @@ public class JobSearchService {
             if (!industry.isBlank()) {
                 job.setIndustry(industry);
             }
-            // 원티드에는 경력 정보가 없음 (annual_from/to는 연봉) — experience는 null 유지
+            // 원티드 목록 API에는 경력 전용 필드가 없어 제목에서 추출 (예: "(3년 이상)", "(신입)")
+            Matcher experienceMatcher = WANTED_EXPERIENCE.matcher(position);
+            if (experienceMatcher.find()) {
+                job.setExperience(experienceMatcher.group());
+            }
 
             jobs.add(job);
         }

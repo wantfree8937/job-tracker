@@ -91,6 +91,25 @@ class JobSearchServiceTest {
         assertThat(jobs.get(0).getExperience()).isNull();
     }
 
+    @Test
+    void 원티드_제목에서_경력_정보를_추출한다() {
+        String json = """
+                {"data":[
+                    {"id":1,"position":"안드로이드 개발자 (3년 이상)","company":{"name":"A"}},
+                    {"id":2,"position":"프로그래머(신입)","company":{"name":"B"}},
+                    {"id":3,"position":"백엔드 개발자 (경력무관)","company":{"name":"C"}},
+                    {"id":4,"position":"디자이너","company":{"name":"D"}}
+                ]}
+                """;
+
+        List<CollectedJob> jobs = JobSearchService.parseWanted(json);
+
+        assertThat(jobs.get(0).getExperience()).isEqualTo("3년 이상");
+        assertThat(jobs.get(1).getExperience()).isEqualTo("신입");
+        assertThat(jobs.get(2).getExperience()).isEqualTo("경력무관");
+        assertThat(jobs.get(3).getExperience()).isNull();
+    }
+
     private static final String JOBKOREA_SAMPLE_HTML = """
             <div>목록 시작</div>
             <div data-sentry-component="CardJob">
