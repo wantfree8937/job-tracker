@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** 딥시크 API로 채용공고 정보 기반 예상 면접 질문을 생성한다 (API 키 노출 방지용 백엔드 프록시) */
+/** opencode-go API로 채용공고 정보 기반 예상 면접 질문을 생성한다 (API 키 노출 방지용 백엔드 프록시) */
 @Slf4j
 @Service
 public class AiService {
@@ -32,8 +32,8 @@ public class AiService {
     private final String apiKey;
     private final RestClient restClient;
 
-    public AiService(@Value("${deepseek.api-key}") String apiKey,
-                      @Value("${deepseek.base-url}") String baseUrl) {
+    public AiService(@Value("${opencode-go.api-key}") String apiKey,
+                      @Value("${opencode-go.base-url}") String baseUrl) {
         this.apiKey = apiKey;
         this.restClient = RestClient.builder().baseUrl(baseUrl).build();
     }
@@ -46,16 +46,17 @@ public class AiService {
                     .header("Authorization", "Bearer " + apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(Map.of(
-                            "model", "deepseek-chat",
+                            "model", "deepseek-v4-flash",
                             "messages", List.of(
                                     Map.of("role", "system", "content", SYSTEM_PROMPT),
                                     Map.of("role", "user", "content", buildUserMessage(request))
-                            )
+                            ),
+                            "max_tokens", 4000
                     ))
                     .retrieve()
                     .body(String.class);
         } catch (Exception e) {
-            log.warn("딥시크 API 호출 실패: {}", e.getMessage());
+            log.warn("opencode-go API 호출 실패: {}", e.getMessage());
             throw new AiRequestFailedException();
         }
 
@@ -80,7 +81,7 @@ public class AiService {
         }
     }
 
-    // 딥시크 응답(choices[0].message.content)에서 질문 JSON 배열을 추출한다 (실제 호출 없이 파싱만 테스트하기 위해 분리)
+    // opencode-go 응답(choices[0].message.content)에서 질문 JSON 배열을 추출한다 (실제 호출 없이 파싱만 테스트하기 위해 분리)
     static List<String> parseQuestions(String responseBody) {
         try {
             ObjectMapper mapper = new ObjectMapper();
