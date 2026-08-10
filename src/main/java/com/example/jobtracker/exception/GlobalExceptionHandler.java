@@ -60,6 +60,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(ErrorResponse.of(e.getMessage()));
     }
 
+    // 딥시크 API 호출/응답 파싱 실패 (502)
+    @ExceptionHandler(AiRequestFailedException.class)
+    public ResponseEntity<ErrorResponse> handleAiRequestFailed(AiRequestFailedException e) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(ErrorResponse.of(e.getMessage()));
+    }
+
     // 잘못된 status 쿼리 파라미터 값 (400)
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e) {

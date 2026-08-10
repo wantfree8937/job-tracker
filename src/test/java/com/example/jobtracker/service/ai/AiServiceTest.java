@@ -1,0 +1,51 @@
+package com.example.jobtracker.service.ai;
+
+import com.example.jobtracker.dto.ai.InterviewQuestionRequest;
+import com.example.jobtracker.exception.AiRequestFailedException;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class AiServiceTest {
+
+    @Test
+    void 딥시크_응답에서_질문_배열을_파싱한다() {
+        String responseBody = """
+                {"choices":[{"message":{"content":"[\\"질문1\\",\\"질문2\\"]"}}]}
+                """;
+
+        List<String> questions = AiService.parseQuestions(responseBody);
+
+        assertThat(questions).containsExactly("질문1", "질문2");
+    }
+
+    @Test
+    void content가_JSON_배열이_아니면_예외를_던진다() {
+        String responseBody = """
+                {"choices":[{"message":{"content":"질문 목록입니다"}}]}
+                """;
+
+        assertThatThrownBy(() -> AiService.parseQuestions(responseBody))
+                .isInstanceOf(AiRequestFailedException.class);
+    }
+
+    @Test
+    void 응답_형식이_깨지면_예외를_던진다() {
+        assertThatThrownBy(() -> AiService.parseQuestions("이건 JSON이 아님"))
+                .isInstanceOf(AiRequestFailedException.class);
+    }
+
+    @Test
+    void 값이_있는_필드만_사용자_메시지에_포함한다() {
+        InterviewQuestionRequest request = new InterviewQuestionRequest(
+                "토스", "안드로이드 개발자", null, "신입", null, null);
+
+        String message = AiService.buildUserMessage(request);
+
+        assertThat(message).contains("회사명: 토스", "포지션: 안드로이드 개발자", "경력: 신입");
+        assertThat(message).doesNotContain("지역:", "업종:", "메모:");
+    }
+}

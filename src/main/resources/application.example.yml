@@ -14,5 +14,10 @@ app:
     secret: ${JWT_SECRET:}
     expiration-ms: 86400000  # 24시간
 
+deepseek:
+  # 딥시크 API 키 (환경변수로만 주입, 하드코딩 금지)
+  api-key: ${DEEPSEEK_API_KEY:}
+  base-url: https://api.deepseek.com
+
 server:
   port: 8080
