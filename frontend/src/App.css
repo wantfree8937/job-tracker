@@ -578,3 +578,12 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+.interview-question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--text);
+}

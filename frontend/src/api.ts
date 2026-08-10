@@ -136,3 +136,20 @@ export interface JobSearchResult {
 export function searchJobs(keyword: string): Promise<JobSearchResult> {
   return request('/jobs/collect/search', { method: 'POST', body: JSON.stringify({ keyword }) })
 }
+
+export interface InterviewQuestionRequest {
+  companyName: string
+  position: string
+  region?: string | null
+  experience?: string | null
+  industry?: string | null
+  memo?: string | null
+}
+
+export interface InterviewQuestionResponse {
+  questions: string[]
+}
+
+export function getInterviewQuestions(input: InterviewQuestionRequest): Promise<InterviewQuestionResponse> {
+  return request('/jobs/ai/interview/questions', { method: 'POST', body: JSON.stringify(input) })
+}
