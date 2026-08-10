@@ -151,5 +151,5 @@ export interface InterviewQuestionResponse {
 }
 
 export function getInterviewQuestions(input: InterviewQuestionRequest): Promise<InterviewQuestionResponse> {
-  return request('/jobs/ai/interview/questions', { method: 'POST', body: JSON.stringify(input) })
+  return request('/ai/interview/questions', { method: 'POST', body: JSON.stringify(input) })
 }
