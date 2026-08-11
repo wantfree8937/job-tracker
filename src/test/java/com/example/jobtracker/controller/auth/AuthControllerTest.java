@@ -203,36 +203,6 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ⑫ http/https가 아닌 URL 파싱 시 400
-    @Test
-    void parseProfileUrlInvalidSchemeTest() throws Exception {
-        signUp("parse-url@test.com");
-        String token = jwtUtil.generateToken("parse-url@test.com");
-
-        mockMvc.perform(post("/api/auth/me/profile/parse-url")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"url":"ftp://example.com"}
-                                """))
-                .andExpect(status().isBadRequest());
-    }
-
-    // ⑫-1 화이트리스트에 없는 도메인 URL 파싱 시 400
-    @Test
-    void parseProfileUrlNotWhitelistedTest() throws Exception {
-        signUp("parse-url-whitelist@test.com");
-        String token = jwtUtil.generateToken("parse-url-whitelist@test.com");
-
-        mockMvc.perform(post("/api/auth/me/profile/parse-url")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"url":"https://example.com"}
-                                """))
-                .andExpect(status().isBadRequest());
-    }
-
     // ⑬ PDF가 아닌 파일 업로드 시 400
     @Test
     void parseProfilePdfNotPdfTest() throws Exception {

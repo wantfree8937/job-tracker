@@ -6,7 +6,6 @@ import com.example.jobtracker.dto.auth.ProfileFileResponse;
 import com.example.jobtracker.dto.auth.ProfileRequest;
 import com.example.jobtracker.dto.auth.ProfileResponse;
 import com.example.jobtracker.dto.auth.ProfileTextResponse;
-import com.example.jobtracker.dto.auth.ProfileUrlRequest;
 import com.example.jobtracker.dto.auth.ResumeFileData;
 import com.example.jobtracker.dto.auth.SignUpRequest;
 import com.example.jobtracker.dto.auth.TokenResponse;
@@ -62,11 +61,6 @@ public class AuthController {
     public ResponseEntity<ProfileResponse> updateProfile(Authentication authentication,
                                                            @Valid @RequestBody ProfileRequest request) {
         return ResponseEntity.ok(authService.updateProfile(authentication.getName(), request));
-    }
-
-    @PostMapping("/me/profile/parse-url")
-    public ResponseEntity<ProfileTextResponse> parseProfileUrl(@Valid @RequestBody ProfileUrlRequest request) {
-        return ResponseEntity.ok(authService.parseProfileUrl(request.url()));
     }
 
     @PostMapping("/me/profile/parse-pdf")

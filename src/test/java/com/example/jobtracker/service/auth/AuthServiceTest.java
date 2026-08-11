@@ -11,37 +11,16 @@ import org.apache.poi.hslf.usermodel.HSLFTextBox;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.poi.xslf.usermodel.XSLFTextBox;
-import org.jsoup.Jsoup;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** AuthService의 순수 함수(외부 호출 없이 검증 가능한 부분) 단위 테스트 */
 class AuthServiceTest {
-
-    @Test
-    void script와_style_태그를_제거하고_본문_텍스트만_추출한다() {
-        String html = "<html><body><script>alert(1)</script><style>.a{}</style>"
-                + "<p>3년차 백엔드 개발자입니다.</p></body></html>";
-
-        String text = AuthService.extractBodyText(Jsoup.parse(html));
-
-        assertThat(text).isEqualTo("3년차 백엔드 개발자입니다.");
-    }
-
-    @Test
-    void 본문이_5000자를_넘으면_잘라낸다() {
-        String html = "<html><body>" + "가".repeat(6000) + "</body></html>";
-
-        String text = AuthService.extractBodyText(Jsoup.parse(html));
-
-        assertThat(text).hasSize(5000);
-    }
 
     @Test
     void PDF_파일에서_텍스트를_추출한다() throws Exception {
@@ -85,47 +64,6 @@ class AuthServiceTest {
         var response = authService.parseProfilePdf(file);
 
         assertThat(response.text()).contains("Backend Developer Resume");
-    }
-
-    @Test
-    void 화이트리스트에_없는_도메인_URL은_예외를_던진다() {
-        AuthService authService = new AuthService(null, null, null);
-
-        assertThatThrownBy(() -> authService.parseProfileUrl("https://example.com/resume"))
-                .isInstanceOf(ProfileParseFailedException.class);
-    }
-
-    @Test
-    void velog_주소에서_username을_추출한다() {
-        assertThat(AuthService.extractVelogUsername(URI.create("https://velog.io/@psy8937/posts")))
-                .isEqualTo("psy8937");
-        assertThat(AuthService.extractVelogUsername(URI.create("https://velog.io/@psy8937")))
-                .isEqualTo("psy8937");
-        assertThat(AuthService.extractVelogUsername(URI.create("https://velog.io/tags/java")))
-                .isNull();
-    }
-
-    @Test
-    void velog_API_응답에서_제목과_요약을_조합한다() {
-        String json = """
-                {"data":{"posts":[
-                    {"title":"글 제목 1","short_description":"요약 1"},
-                    {"title":"글 제목 2","short_description":"요약 2"}
-                ]}}
-                """;
-
-        String text = AuthService.buildVelogText(json);
-
-        assertThat(text).contains("글 제목 1").contains("요약 1")
-                .contains("글 제목 2").contains("요약 2");
-    }
-
-    @Test
-    void velog_글이_없으면_예외를_던진다() {
-        String json = "{\"data\":{\"posts\":[]}}";
-
-        assertThatThrownBy(() -> AuthService.buildVelogText(json))
-                .isInstanceOf(ProfileParseFailedException.class);
     }
 
     private byte[] createPdfWithText(String text) throws Exception {
