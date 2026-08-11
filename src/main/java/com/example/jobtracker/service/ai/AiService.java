@@ -8,6 +8,7 @@ import com.example.jobtracker.exception.InvalidCredentialsException;
 import com.example.jobtracker.repository.user.UserRepository;
 import com.example.jobtracker.util.ResumeTextExtractor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -15,9 +16,12 @@ import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /** opencode-go API로 채용공고 정보(+ 사용자 이력서) 기반 예상 면접 질문을 생성한다 (API 키 노출 방지용 백엔드 프록시) */
@@ -55,6 +59,11 @@ public class AiService {
     private static final String OUTPUT_FORMAT_INSTRUCTION =
             "질문은 반드시 JSON 문자열 배열로만 응답해라 (마크다운/설명 금지).";
 
+    private static final String USER_AGENT =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+    private static final Pattern WANTED_URL_ID = Pattern.compile("wanted\\.co\\.kr/wd/(\\d+)");
+    private static final Pattern JOBKOREA_URL_ID = Pattern.compile("jobkorea\\.co\\.kr/Recruit/GI_Read/(\\d+)");
+
     private final String apiKey;
     private final RestClient restClient;
     private final UserRepository userRepository;
@@ -76,6 +85,8 @@ public class AiService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(InvalidCredentialsException::new);
 
+        String systemPrompt = buildSystemPromptWithJobDetail(request, resolveProfileText(user));
+
         String responseBody;
         try {
             responseBody = restClient.post()
@@ -85,7 +96,7 @@ public class AiService {
                     .body(Map.of(
                             "model", "deepseek-v4-flash",
                             "messages", List.of(
-                                    Map.of("role", "system", "content", buildSystemPrompt(request, resolveProfileText(user))),
+                                    Map.of("role", "system", "content", systemPrompt),
                                     Map.of("role", "user", "content", buildUserMessage(request))
                             ),
                             "max_tokens", 4000
@@ -154,6 +165,88 @@ public class AiService {
 
         sb.append(OUTPUT_FORMAT_INSTRUCTION);
         return sb.toString();
+    }
+
+    // url이 있으면 채용공고를 실시간 크롤링해 자격요건/주요업무를 시스템 프롬프트에 덧붙인다. 실패하면 조용히 폴백
+    private String buildSystemPromptWithJobDetail(InterviewQuestionRequest request, String profileText) {
+        String prompt = buildSystemPrompt(request, profileText);
+        if (request.url() == null || request.url().isBlank()) {
+            return prompt;
+        }
+        String jobDetailText = fetchJobDetails(request.url());
+        if (jobDetailText == null) {
+            return prompt;
+        }
+        return prompt + "\n채용공고 자격요건·주요업무: " + jobDetailText
+                + "\n이 공고의 자격요건과 주요업무를 중심으로 질문을 구성해라.";
+    }
+
+    // 원티드/잡코리아 공고 URL에서 자격요건/주요업무 텍스트를 가져온다. 실패/미지원 URL이면 null
+    private String fetchJobDetails(String url) {
+        try {
+            Matcher wantedMatcher = WANTED_URL_ID.matcher(url);
+            if (wantedMatcher.find()) {
+                String json = fetchWithCurl("https://www.wanted.co.kr/api/v4/jobs/" + wantedMatcher.group(1), null);
+                return parseWantedJobDetail(json);
+            }
+            Matcher jobKoreaMatcher = JOBKOREA_URL_ID.matcher(url);
+            if (jobKoreaMatcher.find()) {
+                String id = jobKoreaMatcher.group(1);
+                String iframeUrl = "https://www.jobkorea.co.kr/Recruit/GI_Read_Comt_Ifrm?Gno=" + id
+                        + "&isHiringCenter=false&hideMapView=false";
+                String html = fetchWithCurl(iframeUrl, "https://www.jobkorea.co.kr/Recruit/GI_Read/" + id);
+                return parseJobKoreaJobDetail(html);
+            }
+        } catch (Exception e) {
+            log.warn("채용공고 크롤링 실패: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    // curl로 외부 페이지를 가져온다 (자바 HTTP 클라이언트는 원티드/잡코리아 봇 감지에 걸림), 5초 제한
+    private static String fetchWithCurl(String url, String referer) throws Exception {
+        List<String> cmd = new ArrayList<>(List.of("curl", "-s", "--max-time", "5",
+                "-A", USER_AGENT, "-H", "Accept-Language: ko-KR,ko;q=0.9,en-US;q=0.8"));
+        if (referer != null) {
+            cmd.add("-H");
+            cmd.add("Referer: " + referer);
+        }
+        cmd.add(url);
+        Process process = new ProcessBuilder(cmd).start();
+        String body = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        process.waitFor();
+        return body;
+    }
+
+    // 원티드 상세 API 응답(job.detail.*)에서 자격요건/주요업무/우대사항을 추출한다 (실제 호출 없이 파싱만 테스트하기 위해 분리)
+    static String parseWantedJobDetail(String json) {
+        try {
+            JsonNode detail = new ObjectMapper().readTree(json).path("job").path("detail");
+            StringBuilder sb = new StringBuilder();
+            appendField(sb, "자격요건", detail.path("requirements").asText(""));
+            appendField(sb, "주요업무", detail.path("main_tasks").asText(""));
+            appendField(sb, "우대사항", detail.path("preferred_points").asText(""));
+            return sb.isEmpty() ? null : sb.toString();
+        } catch (Exception e) {
+            log.warn("원티드 공고 상세 파싱 실패: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private static final int JOBKOREA_DETAIL_MAX_LENGTH = 3000;
+
+    // 잡코리아 상세 iframe HTML(#detail-content)에서 본문 텍스트를 추출한다 (배너 이미지형 공고는 빈 값)
+    static String parseJobKoreaJobDetail(String html) {
+        try {
+            String text = Jsoup.parse(html).select("#detail-content").text();
+            if (text.isBlank()) {
+                return null;
+            }
+            return text.length() > JOBKOREA_DETAIL_MAX_LENGTH ? text.substring(0, JOBKOREA_DETAIL_MAX_LENGTH) : text;
+        } catch (Exception e) {
+            log.warn("잡코리아 공고 상세 파싱 실패: {}", e.getMessage());
+            return null;
+        }
     }
 
     private static boolean hasJobInfo(InterviewQuestionRequest request) {
