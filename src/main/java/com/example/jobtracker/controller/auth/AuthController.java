@@ -63,7 +63,7 @@ public class AuthController {
     }
 
     @PostMapping("/me/profile/parse-pdf")
-    public ResponseEntity<ProfileTextResponse> parseProfilePdf(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<ProfileTextResponse> parseProfilePdf(@RequestPart("file") MultipartFile file) {
         return ResponseEntity.ok(authService.parseProfilePdf(file));
     }
 }
