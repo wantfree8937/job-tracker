@@ -1,10 +1,9 @@
 package com.example.jobtracker.service.ai;
 
 import com.example.jobtracker.dto.ai.InterviewQuestionRequest;
+import com.example.jobtracker.dto.ai.InterviewQuestionResponse;
 import com.example.jobtracker.exception.AiRequestFailedException;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -12,29 +11,40 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AiServiceTest {
 
     @Test
-    void 딥시크_응답에서_질문_배열을_파싱한다() {
+    void 딥시크_응답에서_질문과_usedResume을_파싱한다() {
         String responseBody = """
-                {"choices":[{"message":{"content":"[\\"질문1\\",\\"질문2\\"]"}}]}
+                {"choices":[{"message":{"content":"{\\"usedResume\\": true, \\"questions\\": [\\"질문1\\", \\"질문2\\"]}"}}]}
                 """;
 
-        List<String> questions = AiService.parseQuestions(responseBody);
+        InterviewQuestionResponse response = AiService.parseQuestions(responseBody, false);
 
-        assertThat(questions).containsExactly("질문1", "질문2");
+        assertThat(response.questions()).containsExactly("질문1", "질문2");
+        assertThat(response.usedResume()).isTrue();
     }
 
     @Test
-    void content가_JSON_배열이_아니면_예외를_던진다() {
+    void usedResume이_없으면_hasProfile을_기본값으로_사용한다() {
+        String responseBody = """
+                {"choices":[{"message":{"content":"{\\"questions\\": [\\"질문1\\"]}"}}]}
+                """;
+
+        assertThat(AiService.parseQuestions(responseBody, true).usedResume()).isTrue();
+        assertThat(AiService.parseQuestions(responseBody, false).usedResume()).isFalse();
+    }
+
+    @Test
+    void content가_JSON_객체가_아니면_예외를_던진다() {
         String responseBody = """
                 {"choices":[{"message":{"content":"질문 목록입니다"}}]}
                 """;
 
-        assertThatThrownBy(() -> AiService.parseQuestions(responseBody))
+        assertThatThrownBy(() -> AiService.parseQuestions(responseBody, false))
                 .isInstanceOf(AiRequestFailedException.class);
     }
 
     @Test
     void 응답_형식이_깨지면_예외를_던진다() {
-        assertThatThrownBy(() -> AiService.parseQuestions("이건 JSON이 아님"))
+        assertThatThrownBy(() -> AiService.parseQuestions("이건 JSON이 아님", false))
                 .isInstanceOf(AiRequestFailedException.class);
     }
 

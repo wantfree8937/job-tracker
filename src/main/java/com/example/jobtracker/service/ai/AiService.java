@@ -57,7 +57,10 @@ public class AiService {
             "난이도는 어려움: 신입에게 도전적이되 답변 가능한 수준의 질문으로 구성해라 (경험 기반 트러블슈팅, 설계 의도, 협업 경험 위주). 시니어급의 과도하게 어려운 질문은 피해라.";
 
     private static final String OUTPUT_FORMAT_INSTRUCTION =
-            "질문은 반드시 JSON 문자열 배열로만 응답해라 (마크다운/설명 금지).";
+            "응답은 반드시 아래 JSON 형식으로만 출력해라 (마크다운/설명 금지): "
+                    + "{\"usedResume\": true 또는 false, \"questions\": [\"질문1\", \"질문2\", ...]}\n"
+                    + "usedResume: 이력서나 포트폴리오 내용이 질문 생성에 실제 반영됐으면 true, "
+                    + "이력서가 없거나 채용공고와 무관해 무시했으면 false로 설정해라.";
 
     private static final String USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
@@ -85,7 +88,9 @@ public class AiService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(InvalidCredentialsException::new);
 
-        String systemPrompt = buildSystemPromptWithJobDetail(request, resolveProfileText(user));
+        String profileText = resolveProfileText(user);
+        boolean hasProfile = profileText != null && !profileText.isBlank();
+        String systemPrompt = buildSystemPromptWithJobDetail(request, profileText);
 
         String responseBody;
         try {
@@ -108,7 +113,7 @@ public class AiService {
             throw new AiRequestFailedException();
         }
 
-        return new InterviewQuestionResponse(parseQuestions(responseBody));
+        return parseQuestions(responseBody, hasProfile);
     }
 
     // profileText가 비어있으면 업로드된 이력서 원본 파일에서 텍스트를 추출해 대신 사용한다
@@ -273,19 +278,25 @@ public class AiService {
         }
     }
 
-    // opencode-go 응답(choices[0].message.content)에서 질문 JSON 배열을 추출한다 (실제 호출 없이 파싱만 테스트하기 위해 분리)
-    static List<String> parseQuestions(String responseBody) {
+    // opencode-go 응답(choices[0].message.content)에서 {usedResume, questions} JSON을 추출한다
+    // (실제 호출 없이 파싱만 테스트하기 위해 분리). usedResume 필드가 없으면 hasProfile을 기본값으로 사용한다
+    static InterviewQuestionResponse parseQuestions(String responseBody, boolean hasProfile) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(responseBody);
             String content = root.path("choices").path(0).path("message").path("content").asText();
+            JsonNode contentNode = mapper.readTree(content);
 
             List<String> questions = new ArrayList<>();
-            mapper.readTree(content).forEach(node -> questions.add(node.asText()));
+            contentNode.path("questions").forEach(node -> questions.add(node.asText()));
             if (questions.isEmpty()) {
                 throw new AiRequestFailedException();
             }
-            return questions;
+
+            JsonNode usedResumeNode = contentNode.path("usedResume");
+            boolean usedResume = usedResumeNode.isBoolean() ? usedResumeNode.asBoolean() : hasProfile;
+
+            return new InterviewQuestionResponse(questions, usedResume);
         } catch (AiRequestFailedException e) {
             throw e;
         } catch (Exception e) {
