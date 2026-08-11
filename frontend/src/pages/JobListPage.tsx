@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Header from '../components/Header'
 import StatusBadge from '../components/StatusBadge'
@@ -176,6 +176,9 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     setIsModalOpen(true)
   }
 
+  // 첫 로드 시 동시 요청 경합으로 500이 간헐 발생 → 1회 자동 재시도로 방어
+  const collectedRetryRef = useRef(0)
+
   const loadCollected = useCallback(async () => {
     setIsCollectedLoading(true)
     try {
@@ -189,7 +192,15 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
       const sorted = [...data].sort((a, b) => Number(a.scrapedByMe) - Number(b.scrapedByMe))
       setCollectedJobs(sorted)
       setScrapedIds(new Set(data.filter((j) => j.scrapedByMe).map((j) => j.id)))
+      setCollectedError('')
+      collectedRetryRef.current = 0
     } catch (err) {
+      if (collectedRetryRef.current === 0) {
+        collectedRetryRef.current++
+        setTimeout(() => loadCollected(), 800)
+        return
+      }
+      collectedRetryRef.current = 0
       setCollectedError(err instanceof Error ? err.message : '수집 공고를 불러오지 못했습니다.')
     } finally {
       setIsCollectedLoading(false)
