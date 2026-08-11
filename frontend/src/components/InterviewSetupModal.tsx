@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getInterviewQuestions } from '../api'
 import type { JobPosting } from '../types'
 
@@ -28,8 +28,23 @@ export default function InterviewSetupModal({ open, onClose, jobs }: InterviewSe
   const [questions, setQuestions] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isJobSelectOpen, setIsJobSelectOpen] = useState(false)
+  const jobSelectRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isJobSelectOpen) return
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (jobSelectRef.current && !jobSelectRef.current.contains(e.target as Node)) {
+        setIsJobSelectOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [isJobSelectOpen])
 
   if (!open) return null
+
+  const selectedJob = jobs.find((j) => j.id === Number(selectedJobId))
 
   const handleClose = () => {
     setQuestions([])
@@ -64,14 +79,45 @@ export default function InterviewSetupModal({ open, onClose, jobs }: InterviewSe
 
         <div>
           <p className="modal-section-label">면접볼 공고 (선택)</p>
-          <select value={selectedJobId} onChange={(e) => setSelectedJobId(e.target.value)}>
-            <option value="">공고를 선택하세요 (선택)</option>
-            {jobs.map((job) => (
-              <option key={job.id} value={job.id}>
-                {job.companyName} · {job.position}
-              </option>
-            ))}
-          </select>
+          <div className="interview-job-select-wrap" ref={jobSelectRef}>
+            <button
+              type="button"
+              className="interview-job-select"
+              onClick={() => setIsJobSelectOpen((v) => !v)}
+            >
+              <span>{selectedJob ? `${selectedJob.companyName} · ${selectedJob.position}` : '공고를 선택하세요 (선택)'}</span>
+              <span className="interview-job-select-arrow">▼</span>
+            </button>
+            {isJobSelectOpen && (
+              <div className="interview-job-select-list" role="listbox">
+                <div
+                  role="option"
+                  aria-selected={selectedJobId === ''}
+                  className={selectedJobId === '' ? 'interview-job-select-option active' : 'interview-job-select-option'}
+                  onClick={() => {
+                    setSelectedJobId('')
+                    setIsJobSelectOpen(false)
+                  }}
+                >
+                  공고를 선택하세요 (선택)
+                </div>
+                {jobs.map((job) => (
+                  <div
+                    key={job.id}
+                    role="option"
+                    aria-selected={Number(selectedJobId) === job.id}
+                    className={Number(selectedJobId) === job.id ? 'interview-job-select-option active' : 'interview-job-select-option'}
+                    onClick={() => {
+                      setSelectedJobId(String(job.id))
+                      setIsJobSelectOpen(false)
+                    }}
+                  >
+                    {job.companyName} · {job.position}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div>

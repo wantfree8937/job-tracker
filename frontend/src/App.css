@@ -642,6 +642,61 @@
   color: var(--text-h);
 }
 
+.interview-job-select-wrap {
+  position: relative;
+}
+
+.interview-job-select {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-h);
+  font-size: 14px;
+  text-align: left;
+}
+.interview-job-select:hover {
+  border-color: var(--accent);
+}
+
+.interview-job-select-arrow {
+  font-size: 10px;
+  color: var(--text);
+}
+
+.interview-job-select-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+}
+
+.interview-job-select-option {
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+.interview-job-select-option:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+.interview-job-select-option.active {
+  color: var(--accent);
+  font-weight: 500;
+}
+
 .interview-question-list {
   display: flex;
   flex-direction: column;
