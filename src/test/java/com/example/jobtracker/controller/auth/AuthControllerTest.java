@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
@@ -187,5 +188,41 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(java.util.Map.of("profileText", tooLong))))
                 .andExpect(status().isBadRequest());
+    }
+
+    // ⑫ http/https가 아닌 URL 파싱 시 400
+    @Test
+    void parseProfileUrlInvalidSchemeTest() throws Exception {
+        signUp("parse-url@test.com");
+        String token = jwtUtil.generateToken("parse-url@test.com");
+
+        mockMvc.perform(post("/api/auth/me/profile/parse-url")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"url":"ftp://example.com"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ⑬ PDF가 아닌 파일 업로드 시 400
+    @Test
+    void parseProfilePdfNotPdfTest() throws Exception {
+        signUp("parse-pdf@test.com");
+        String token = jwtUtil.generateToken("parse-pdf@test.com");
+        MockMultipartFile file = new MockMultipartFile("file", "resume.txt", "text/plain", "hello".getBytes());
+
+        mockMvc.perform(multipart("/api/auth/me/profile/parse-pdf", file)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ⑭ 토큰 없이 parse-pdf 접근 시 401
+    @Test
+    void parseProfilePdfWithoutTokenTest() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "resume.pdf", "application/pdf", "hello".getBytes());
+
+        mockMvc.perform(multipart("/api/auth/me/profile/parse-pdf", file))
+                .andExpect(status().isUnauthorized());
     }
 }

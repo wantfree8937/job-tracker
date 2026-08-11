@@ -4,6 +4,8 @@ import com.example.jobtracker.dto.auth.KeywordsRequest;
 import com.example.jobtracker.dto.auth.LoginRequest;
 import com.example.jobtracker.dto.auth.ProfileRequest;
 import com.example.jobtracker.dto.auth.ProfileResponse;
+import com.example.jobtracker.dto.auth.ProfileTextResponse;
+import com.example.jobtracker.dto.auth.ProfileUrlRequest;
 import com.example.jobtracker.dto.auth.SignUpRequest;
 import com.example.jobtracker.dto.auth.TokenResponse;
 import com.example.jobtracker.dto.auth.UserResponse;
@@ -14,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -52,5 +55,15 @@ public class AuthController {
     public ResponseEntity<ProfileResponse> updateProfile(Authentication authentication,
                                                            @Valid @RequestBody ProfileRequest request) {
         return ResponseEntity.ok(authService.updateProfile(authentication.getName(), request));
+    }
+
+    @PostMapping("/me/profile/parse-url")
+    public ResponseEntity<ProfileTextResponse> parseProfileUrl(@Valid @RequestBody ProfileUrlRequest request) {
+        return ResponseEntity.ok(authService.parseProfileUrl(request.url()));
+    }
+
+    @PostMapping("/me/profile/parse-pdf")
+    public ResponseEntity<ProfileTextResponse> parseProfilePdf(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(authService.parseProfilePdf(file));
     }
 }

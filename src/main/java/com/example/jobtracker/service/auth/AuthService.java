@@ -7,22 +7,34 @@ import com.example.jobtracker.dto.auth.ProfileResponse;
 import com.example.jobtracker.dto.auth.SignUpRequest;
 import com.example.jobtracker.dto.auth.TokenResponse;
 import com.example.jobtracker.dto.auth.UserResponse;
+import com.example.jobtracker.dto.auth.ProfileTextResponse;
 import com.example.jobtracker.entity.user.User;
 import com.example.jobtracker.exception.EmailAlreadyExistsException;
 import com.example.jobtracker.exception.InvalidCredentialsException;
+import com.example.jobtracker.exception.ProfileParseFailedException;
 import com.example.jobtracker.repository.user.UserRepository;
 import com.example.jobtracker.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    private static final Pattern HTTP_SCHEME = Pattern.compile("^https?://", Pattern.CASE_INSENSITIVE);
+    private static final int PROFILE_TEXT_MAX_LENGTH = 5000;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -90,6 +102,50 @@ public class AuthService {
                 .orElseThrow(InvalidCredentialsException::new);
         user.setProfileText(request.profileText());
         return new ProfileResponse(user.getProfileText());
+    }
+
+    // URL 페이지에서 본문 텍스트 추출 (script/style 제거, 최대 5000자)
+    public ProfileTextResponse parseProfileUrl(String url) {
+        if (!HTTP_SCHEME.matcher(url).find()) {
+            throw new ProfileParseFailedException("http/https URL만 허용됩니다");
+        }
+
+        Document doc;
+        try {
+            doc = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0 (compatible; JobTrackerBot/1.0)")
+                    .timeout(10_000)
+                    .get();
+        } catch (Exception e) {
+            throw new ProfileParseFailedException("URL에서 텍스트를 가져올 수 없습니다");
+        }
+
+        return new ProfileTextResponse(extractBodyText(doc));
+    }
+
+    // script/style 태그를 제거한 본문 텍스트 추출 (최대 5000자)
+    static String extractBodyText(Document doc) {
+        doc.select("script, style").remove();
+        return truncate(doc.body().text());
+    }
+
+    // PDF 파일에서 텍스트 추출 (최대 5000자)
+    public ProfileTextResponse parseProfilePdf(MultipartFile file) {
+        if (file.isEmpty() || !"application/pdf".equals(file.getContentType())) {
+            throw new ProfileParseFailedException("PDF 파일만 업로드할 수 있습니다");
+        }
+
+        try (PDDocument document = PDDocument.load(file.getInputStream())) {
+            String text = new PDFTextStripper().getText(document);
+            return new ProfileTextResponse(truncate(text));
+        } catch (IOException e) {
+            throw new ProfileParseFailedException("PDF에서 텍스트를 추출할 수 없습니다");
+        }
+    }
+
+    private static String truncate(String text) {
+        String trimmed = text == null ? "" : text.trim();
+        return trimmed.length() > PROFILE_TEXT_MAX_LENGTH ? trimmed.substring(0, PROFILE_TEXT_MAX_LENGTH) : trimmed;
     }
 
     private List<String> normalizeKeywords(List<String> keywords) {

@@ -52,6 +52,18 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- 이력서 URL에서 본문 텍스트 추출 -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.17.2</version>
+		</dependency>
+		<!-- 이력서 PDF에서 텍스트 추출 -->
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>2.0.31</version>
+		</dependency>
 		<!-- JWT (JSON Web Token) 생성·검증 라이브러리 -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
