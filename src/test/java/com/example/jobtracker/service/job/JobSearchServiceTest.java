@@ -141,6 +141,24 @@ class JobSearchServiceTest {
     }
 
     @Test
+    void 잡코리아_회사명의_HTML_엔티티를_디코딩한다() {
+        String html = """
+                <div>목록 시작</div>
+                <div data-sentry-component="CardJob">
+                    <a href="/Recruit/GI_Read/99999?Oem_Code=1">
+                        <span class="text-typo-b1-18 text-gray900">MD&amp;영업 채용</span>
+                    </a>
+                    <img alt="F&amp;F 로고" src="/logo5.png">
+                </div>
+                """;
+
+        List<CollectedJob> jobs = JobSearchService.parseJobKorea(html);
+
+        assertThat(jobs.get(0).getTitle()).isEqualTo("MD&영업 채용");
+        assertThat(jobs.get(0).getCompany()).isEqualTo("F&F");
+    }
+
+    @Test
     void 잡코리아_HTML에_카드가_없으면_빈_리스트를_반환한다() {
         List<CollectedJob> jobs = JobSearchService.parseJobKorea("<div>공고가 없습니다</div>");
 

@@ -66,4 +66,10 @@ public class CollectedJobController {
     public ResponseEntity<BackfillExperienceResult> backfillExperience() {
         return ResponseEntity.ok(jobSearchService.backfillExperience());
     }
+
+    // 회사명/제목에 HTML 엔티티(&amp; 등)가 그대로 저장된 기존 공고를 일괄로 정리한다
+    @PostMapping("/collected/backfill-html-entities")
+    public ResponseEntity<BackfillHtmlEntitiesResult> backfillHtmlEntities() {
+        return ResponseEntity.ok(jobSearchService.backfillHtmlEntities());
+    }
 }

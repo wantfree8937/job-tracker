@@ -1,6 +1,7 @@
 package com.example.jobtracker.service.job;
 
 import com.example.jobtracker.dto.job.BackfillExperienceResult;
+import com.example.jobtracker.dto.job.BackfillHtmlEntitiesResult;
 import com.example.jobtracker.dto.job.JobSearchResult;
 import com.example.jobtracker.entity.job.CollectedJob;
 import com.example.jobtracker.entity.user.User;
@@ -9,6 +10,7 @@ import com.example.jobtracker.repository.job.CollectedJobRepository;
 import com.example.jobtracker.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.parser.Parser;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -247,8 +250,9 @@ public class JobSearchService {
             String id = idMatcher.group(1);
             CollectedJob job = new CollectedJob();
             job.setJobKey("잡코리아:" + id);
-            job.setTitle(titleMatcher.group(1));
-            job.setCompany(companyMatcher.group(1).trim());
+            // 잡코리아 회사명/제목에 HTML 엔티티(&amp; 등)가 섞여 있어 디코딩한다
+            job.setTitle(Parser.unescapeEntities(titleMatcher.group(1), false));
+            job.setCompany(Parser.unescapeEntities(companyMatcher.group(1).trim(), false));
             job.setUrl("https://www.jobkorea.co.kr/Recruit/GI_Read/" + id);
             job.setSource("잡코리아");
 
@@ -293,6 +297,29 @@ public class JobSearchService {
             }
         }
         return new BackfillExperienceResult(processed, filled);
+    }
+
+    // 회사명/제목에 HTML 엔티티(&amp; 등)가 그대로 저장된 기존 공고를 디코딩해 일괄로 정리한다
+    @Transactional
+    public BackfillHtmlEntitiesResult backfillHtmlEntities() {
+        int processed = 0;
+        int updated = 0;
+        for (CollectedJob job : collectedJobRepository.findAll()) {
+            processed++;
+            String company = unescapeIfPresent(job.getCompany());
+            String title = unescapeIfPresent(job.getTitle());
+            if (Objects.equals(company, job.getCompany()) && Objects.equals(title, job.getTitle())) {
+                continue;
+            }
+            job.setCompany(company);
+            job.setTitle(title);
+            updated++;
+        }
+        return new BackfillHtmlEntitiesResult(processed, updated);
+    }
+
+    private static String unescapeIfPresent(String value) {
+        return value == null ? null : Parser.unescapeEntities(value, false);
     }
 
     // 제목에서 경력 패턴을 추출한다 (없으면 null)
