@@ -459,7 +459,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         onCancel={() => setDeleteTargetId(null)}
       />
 
-      <InterviewSetupModal open={isInterviewModalOpen} onClose={() => setIsInterviewModalOpen(false)} />
+      <InterviewSetupModal open={isInterviewModalOpen} onClose={() => setIsInterviewModalOpen(false)} jobs={jobs} />
 
       {isProfileModalOpen && (
         <ProfileModal

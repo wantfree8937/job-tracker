@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { getInterviewQuestions } from '../api'
+import type { JobPosting } from '../types'
 
 interface InterviewSetupModalProps {
   open: boolean
   onClose: () => void
+  jobs: JobPosting[]
 }
 
 const TOPICS = [
@@ -19,9 +21,8 @@ const DIFFICULTIES = [
 ]
 
 // AI 면접 설정(유형/난이도) 선택 → 예상 질문 생성 모달
-export default function InterviewSetupModal({ open, onClose }: InterviewSetupModalProps) {
-  const [companyName, setCompanyName] = useState('')
-  const [position, setPosition] = useState('')
+export default function InterviewSetupModal({ open, onClose, jobs }: InterviewSetupModalProps) {
+  const [selectedJobId, setSelectedJobId] = useState('')
   const [topic, setTopic] = useState('MIXED')
   const [difficulty, setDifficulty] = useState('NORMAL')
   const [questions, setQuestions] = useState<string[]>([])
@@ -37,12 +38,17 @@ export default function InterviewSetupModal({ open, onClose }: InterviewSetupMod
   }
 
   const handleStart = () => {
+    const selected = jobs.find((j) => j.id === Number(selectedJobId))
     setIsLoading(true)
     setError('')
     setQuestions([])
     getInterviewQuestions({
-      companyName: companyName.trim() || undefined,
-      position: position.trim() || undefined,
+      companyName: selected?.companyName || undefined,
+      position: selected?.position || undefined,
+      region: selected?.region || undefined,
+      experience: selected?.experience || undefined,
+      industry: selected?.industry || undefined,
+      memo: selected?.memo || undefined,
       topic,
       difficulty,
     })
@@ -57,23 +63,15 @@ export default function InterviewSetupModal({ open, onClose }: InterviewSetupMod
         <h2>AI 면접 연습</h2>
 
         <div>
-          <p className="modal-section-label">회사명 (선택)</p>
-          <input
-            type="text"
-            placeholder="면접볼 회사가 있다면 입력해주세요 (선택)"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <p className="modal-section-label">포지션/직무 (선택)</p>
-          <input
-            type="text"
-            placeholder="지원할 포지션을 입력해주세요 (선택)"
-            value={position}
-            onChange={(e) => setPosition(e.target.value)}
-          />
+          <p className="modal-section-label">면접볼 공고 (선택)</p>
+          <select value={selectedJobId} onChange={(e) => setSelectedJobId(e.target.value)}>
+            <option value="">공고를 선택하세요 (선택)</option>
+            {jobs.map((job) => (
+              <option key={job.id} value={job.id}>
+                {job.companyName} · {job.position}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
