@@ -20,6 +20,8 @@ const DIFFICULTIES = [
 
 // AI 면접 설정(유형/난이도) 선택 → 예상 질문 생성 모달
 export default function InterviewSetupModal({ open, onClose }: InterviewSetupModalProps) {
+  const [companyName, setCompanyName] = useState('')
+  const [position, setPosition] = useState('')
   const [topic, setTopic] = useState('MIXED')
   const [difficulty, setDifficulty] = useState('NORMAL')
   const [questions, setQuestions] = useState<string[]>([])
@@ -38,7 +40,12 @@ export default function InterviewSetupModal({ open, onClose }: InterviewSetupMod
     setIsLoading(true)
     setError('')
     setQuestions([])
-    getInterviewQuestions({ topic, difficulty })
+    getInterviewQuestions({
+      companyName: companyName.trim() || undefined,
+      position: position.trim() || undefined,
+      topic,
+      difficulty,
+    })
       .then((res) => setQuestions(res.questions))
       .catch((err) => setError(err instanceof Error ? err.message : '질문 생성 중 오류가 발생했습니다.'))
       .finally(() => setIsLoading(false))
@@ -48,6 +55,26 @@ export default function InterviewSetupModal({ open, onClose }: InterviewSetupMod
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>AI 면접 연습</h2>
+
+        <div>
+          <p className="modal-section-label">회사명 (선택)</p>
+          <input
+            type="text"
+            placeholder="면접볼 회사가 있다면 입력해주세요 (선택)"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <p className="modal-section-label">포지션/직무 (선택)</p>
+          <input
+            type="text"
+            placeholder="지원할 포지션을 입력해주세요 (선택)"
+            value={position}
+            onChange={(e) => setPosition(e.target.value)}
+          />
+        </div>
 
         <div>
           <p className="modal-section-label">질문 유형</p>
