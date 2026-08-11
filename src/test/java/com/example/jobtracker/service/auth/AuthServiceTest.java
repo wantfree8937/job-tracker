@@ -5,6 +5,12 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.poi.hslf.usermodel.HSLFSlide;
+import org.apache.poi.hslf.usermodel.HSLFSlideShow;
+import org.apache.poi.hslf.usermodel.HSLFTextBox;
+import org.apache.poi.xslf.usermodel.XMLSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFSlide;
+import org.apache.poi.xslf.usermodel.XSLFTextBox;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -56,6 +62,38 @@ class AuthServiceTest {
                 .isInstanceOf(ProfileParseFailedException.class);
     }
 
+    @Test
+    void PPTX_파일에서_텍스트를_추출한다() throws Exception {
+        AuthService authService = new AuthService(null, null, null);
+        byte[] pptxBytes = createPptxWithText("Backend Developer Resume");
+        MockMultipartFile file = new MockMultipartFile("file", "resume.pptx",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation", pptxBytes);
+
+        var response = authService.parseProfilePdf(file);
+
+        assertThat(response.text()).contains("Backend Developer Resume");
+    }
+
+    @Test
+    void PPT_파일에서_텍스트를_추출한다() throws Exception {
+        AuthService authService = new AuthService(null, null, null);
+        byte[] pptBytes = createPptWithText("Backend Developer Resume");
+        MockMultipartFile file = new MockMultipartFile("file", "resume.ppt",
+                "application/vnd.ms-powerpoint", pptBytes);
+
+        var response = authService.parseProfilePdf(file);
+
+        assertThat(response.text()).contains("Backend Developer Resume");
+    }
+
+    @Test
+    void 화이트리스트에_없는_도메인_URL은_예외를_던진다() {
+        AuthService authService = new AuthService(null, null, null);
+
+        assertThatThrownBy(() -> authService.parseProfileUrl("https://example.com/resume"))
+                .isInstanceOf(ProfileParseFailedException.class);
+    }
+
     private byte[] createPdfWithText(String text) throws Exception {
         try (PDDocument document = new PDDocument()) {
             PDPage page = new PDPage();
@@ -69,6 +107,29 @@ class AuthServiceTest {
             }
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.save(out);
+            return out.toByteArray();
+        }
+    }
+
+    private byte[] createPptxWithText(String text) throws Exception {
+        try (XMLSlideShow ppt = new XMLSlideShow()) {
+            XSLFSlide slide = ppt.createSlide();
+            XSLFTextBox textBox = slide.createTextBox();
+            textBox.setText(text);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ppt.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    private byte[] createPptWithText(String text) throws Exception {
+        try (HSLFSlideShow ppt = new HSLFSlideShow()) {
+            HSLFSlide slide = ppt.createSlide();
+            HSLFTextBox textBox = new HSLFTextBox();
+            textBox.setText(text);
+            slide.addShape(textBox);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ppt.write(out);
             return out.toByteArray();
         }
     }
