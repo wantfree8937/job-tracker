@@ -177,8 +177,22 @@ export function parseProfileUrl(url: string): Promise<ProfileParseResult> {
   return request('/auth/me/profile/parse-url', { method: 'POST', body: JSON.stringify({ url }) })
 }
 
-export function parseProfilePdf(file: File): Promise<ProfileParseResult> {
+export interface ProfileFileResponse {
+  fileName: string | null
+  fileType: string | null
+  text?: string | null
+}
+
+export function saveProfileFile(file: File): Promise<ProfileFileResponse> {
   const formData = new FormData()
   formData.append('file', file)
-  return request('/auth/me/profile/parse-pdf', { method: 'POST', body: formData })
+  return request('/auth/me/profile/file', { method: 'PUT', body: formData })
+}
+
+export function getProfileFile(): Promise<ProfileFileResponse> {
+  return request('/auth/me/profile/file')
+}
+
+export function deleteProfileFile(): Promise<void> {
+  return request('/auth/me/profile/file', { method: 'DELETE' })
 }

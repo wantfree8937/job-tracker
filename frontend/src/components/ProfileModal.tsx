@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { getProfile, saveProfile, parseProfileUrl, parseProfilePdf } from '../api'
+import { getProfile, saveProfile, parseProfileUrl, getProfileFile, saveProfileFile, deleteProfileFile } from '../api'
+import type { ProfileFileResponse } from '../api'
 
 interface ProfileModalProps {
   open: boolean
@@ -22,6 +23,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
   const [url, setUrl] = useState('')
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [savedFile, setSavedFile] = useState<ProfileFileResponse | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -31,8 +33,11 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     setUrl('')
     setPdfFile(null)
     setIsLoading(true)
-    getProfile()
-      .then((res) => setProfileText(res.profileText ?? ''))
+    Promise.all([getProfile(), getProfileFile()])
+      .then(([profile, file]) => {
+        setProfileText(profile.profileText ?? '')
+        setSavedFile(file.fileName ? file : null)
+      })
       .catch((err) => setError(err instanceof Error ? err.message : '이력서를 불러오지 못했습니다.'))
       .finally(() => setIsLoading(false))
   }, [open])
@@ -69,19 +74,51 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     }
   }
 
-  const handleParsePdf = async () => {
+  const handleUploadFile = async () => {
     if (!pdfFile) return
     setError('')
     setMessage('')
     setIsParsing(true)
     try {
-      const res = await parseProfilePdf(pdfFile)
-      setProfileText(res.text)
+      const res = await saveProfileFile(pdfFile)
+      setProfileText(res.text ?? '')
+      setSavedFile(res)
+      setPdfFile(null)
       setTab('text')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'PDF를 변환할 수 없어요.')
+      setError(err instanceof Error ? err.message : '파일을 저장할 수 없어요.')
     } finally {
       setIsParsing(false)
+    }
+  }
+
+  const handleDownloadFile = async () => {
+    setError('')
+    try {
+      const token = localStorage.getItem('accessToken')
+      const res = await fetch('/api/auth/me/profile/file', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
+      if (!res.ok) throw new Error('파일을 다운로드할 수 없어요.')
+      const blob = await res.blob()
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = savedFile?.fileName ?? 'resume'
+      link.click()
+      URL.revokeObjectURL(link.href)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '파일을 다운로드할 수 없어요.')
+    }
+  }
+
+  const handleDeleteFile = async () => {
+    setError('')
+    setMessage('')
+    try {
+      await deleteProfileFile()
+      setSavedFile(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '파일을 삭제할 수 없어요.')
     }
   }
 
@@ -121,6 +158,17 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
 
         {tab === 'pdf' && (
           <div>
+            {savedFile && (
+              <div className="saved-file-row">
+                <span className="saved-file-name">{savedFile.fileName}</span>
+                <button type="button" className="outline-button" onClick={handleDownloadFile}>
+                  다운로드
+                </button>
+                <button type="button" className="outline-button" onClick={handleDeleteFile}>
+                  삭제
+                </button>
+              </div>
+            )}
             <label
               className={isDragging ? 'drop-zone dragging' : 'drop-zone'}
               onDragOver={(e) => {
@@ -146,8 +194,8 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
               <span className="drop-zone-hint">PDF · PPT · PPTX (최대 10MB)</span>
             </label>
             <div className="modal-actions">
-              <button type="button" className="outline-button" onClick={handleParsePdf} disabled={isParsing || !pdfFile}>
-                {isParsing ? '변환 중...' : '변환'}
+              <button type="button" className="outline-button" onClick={handleUploadFile} disabled={isParsing || !pdfFile}>
+                {isParsing ? '업로드 중...' : '업로드/저장'}
               </button>
             </div>
           </div>
