@@ -47,6 +47,8 @@ public class AiService {
             "이력서 정보가 없으니, 채용공고 정보(회사/포지션/요구사항)를 바탕으로 지원 동기, 회사/업종 이해도, 포지션 요구사항에 대한 준비, 직무 관련 경험 유무 등을 묻는 질문 5개를 생성해라.";
     private static final String MISMATCH_INSTRUCTION =
             "채용공고와 이력서/포트폴리오가 직무/기술 스택 기준으로 전혀 무관하다고 판단되면, 이력서 내용은 무시하고 채용공고 정보(회사/포지션/요구사항)만으로 질문을 구성해라.";
+    private static final String JUNK_PROFILE_INSTRUCTION =
+            "지원자의 이력서/포트폴리오 내용이 무의미하다고 판단되면(반복 문자, 광고성 텍스트, 질문 생성에 쓸모없는 내용, 포지션과 완전히 무관한 내용 등) 해당 내용은 무시하고 질문을 생성해라.";
 
     private static final String ENTRY_INSTRUCTION =
             "난이도는 신입: 기술 질문은 지원자가 사용한 기술의 기본 개념 수준으로만 묻고, 프로젝트 경험(무엇을 했는지, 왜 그렇게 했는지, 어떤 어려움을 겪었고 어떻게 해결했는지)과 협업 경험, 성향, 문제 해결 태도, 성장 가능성 위주로 질문해라. 압박 질문이나 시니어급 질문은 금지한다.";
@@ -60,7 +62,7 @@ public class AiService {
             "응답은 반드시 아래 JSON 형식으로만 출력해라 (마크다운/설명 금지): "
                     + "{\"usedResume\": true 또는 false, \"questions\": [\"질문1\", \"질문2\", ...]}\n"
                     + "usedResume: 이력서나 포트폴리오 내용이 질문 생성에 실제 반영됐으면 true, "
-                    + "이력서가 없거나 채용공고와 무관해 무시했으면 false로 설정해라.";
+                    + "이력서가 없거나 채용공고와 무관하거나 무의미해서 무시했으면 false로 설정해라.";
 
     private static final String USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
@@ -142,6 +144,7 @@ public class AiService {
         StringBuilder sb = new StringBuilder(INTRO);
         if (hasProfile) {
             sb.append("지원자의 이력서/포트폴리오: ").append(profileText).append("\n");
+            sb.append(JUNK_PROFILE_INSTRUCTION).append("\n");
             if (hasJobInfo) {
                 sb.append(MISMATCH_INSTRUCTION).append("\n");
             }
