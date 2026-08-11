@@ -17,6 +17,7 @@ const TOPICS = [
 ]
 
 const DIFFICULTIES = [
+  { value: 'ENTRY', label: '신입' },
   { value: 'EASY', label: '쉬움' },
   { value: 'NORMAL', label: '보통' },
   { value: 'HARD', label: '어려움' },
