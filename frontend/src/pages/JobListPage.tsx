@@ -7,7 +7,7 @@ import KeywordsModal from '../components/KeywordsModal'
 import ConfirmModal from '../components/ConfirmModal'
 import InterviewSetupModal from '../components/InterviewSetupModal'
 import ProfileModal from '../components/ProfileModal'
-import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me, type CollectedJobSearchField } from '../api'
+import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me, getProfile, type CollectedJobSearchField } from '../api'
 import { ALL_STATUSES, STATUS_LABEL, type ApplicationStatus, type JobPosting, type JobStats, type CollectedJob } from '../types'
 
 // 상태별 통계 카드 이모지
@@ -37,6 +37,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null)
   const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [profileText, setProfileText] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -54,6 +55,14 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [keywords, setKeywords] = useState<string[]>([])
   const [isKeywordsModalOpen, setIsKeywordsModalOpen] = useState(false)
   const [keywordsMessage, setKeywordsMessage] = useState('')
+
+  // AI 면접 모달 열릴 때 이력서 참고 상태 표시용으로 조회
+  useEffect(() => {
+    if (!isInterviewModalOpen) return
+    getProfile()
+      .then((res) => setProfileText(res.profileText ?? ''))
+      .catch(() => setProfileText(null))
+  }, [isInterviewModalOpen])
 
   // 메시지는 3초 후 자동으로 사라진다 (새 메시지가 오면 이전 타이머는 취소)
   useEffect(() => {
@@ -473,7 +482,12 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         onCancel={() => setDeleteTargetId(null)}
       />
 
-      <InterviewSetupModal open={isInterviewModalOpen} onClose={() => setIsInterviewModalOpen(false)} jobs={jobs} />
+      <InterviewSetupModal
+        open={isInterviewModalOpen}
+        onClose={() => setIsInterviewModalOpen(false)}
+        jobs={jobs}
+        profileText={profileText}
+      />
 
       {isProfileModalOpen && (
         <ProfileModal

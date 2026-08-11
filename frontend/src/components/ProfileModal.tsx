@@ -44,6 +44,8 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
 
   if (!open) return null
 
+  const isBusy = isLoading || isSaving || isParsing
+
   const handleSave = async () => {
     setError('')
     setMessage('')
@@ -123,7 +125,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={isBusy ? undefined : onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>내 이력서</h2>
         {isLoading && <p>불러오는 중...</p>}
@@ -212,7 +214,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
         </label>
         <p className="modal-section-label">{profileText.length} / {MAX_LENGTH}자</p>
         <div className="modal-actions">
-          <button type="button" className="outline-button" onClick={onClose}>
+          <button type="button" className="outline-button" onClick={onClose} disabled={isBusy}>
             닫기
           </button>
           <button type="button" className="primary-button" onClick={handleSave} disabled={isSaving || isLoading}>
