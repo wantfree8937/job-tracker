@@ -68,6 +68,7 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
       experience: selected?.experience || undefined,
       industry: selected?.industry || undefined,
       memo: selected?.memo || undefined,
+      url: selected?.link || undefined,
       topic,
       difficulty,
     })

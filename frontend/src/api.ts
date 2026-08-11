@@ -147,6 +147,7 @@ export interface InterviewQuestionRequest {
   experience?: string | null
   industry?: string | null
   memo?: string | null
+  url?: string
 }
 
 export interface InterviewQuestionResponse {
