@@ -39,8 +39,10 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [error, setError] = useState('')
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   const [collectedJobs, setCollectedJobs] = useState<CollectedJob[]>([])
+  const [isCollectedLoading, setIsCollectedLoading] = useState(false)
   const [collectedKeyword, setCollectedKeyword] = useState('')
   const [searchField, setSearchField] = useState<CollectedJobSearchField>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('ALL')
@@ -79,6 +81,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   }, [keywordsMessage])
 
   const loadJobs = useCallback(async () => {
+    setIsLoading(true)
     try {
       const data = await getJobs({
         status: statusFilter === 'ALL' ? undefined : statusFilter,
@@ -87,6 +90,8 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
       setJobs(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : '공고 목록을 불러오지 못했습니다.')
+    } finally {
+      setIsLoading(false)
     }
   }, [statusFilter, keyword])
 
@@ -150,6 +155,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   }
 
   const loadCollected = useCallback(async () => {
+    setIsCollectedLoading(true)
     try {
       const data = await getCollectedJobs({
         keyword: collectedKeyword || undefined,
@@ -163,6 +169,8 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
       setScrapedIds(new Set(data.filter((j) => j.scrapedByMe).map((j) => j.id)))
     } catch (err) {
       setCollectedError(err instanceof Error ? err.message : '수집 공고를 불러오지 못했습니다.')
+    } finally {
+      setIsCollectedLoading(false)
     }
   }, [collectedKeyword, searchField, sourceFilter, mineOnly])
 
@@ -282,7 +290,11 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               createPortal(<div className="toast toast-error">{error}</div>, document.body)}
 
             <section className="job-list">
-              {jobs.length === 0 && <p className="empty-message">등록된 공고가 없습니다.</p>}
+              {isLoading ? (
+                <div className="job-list-loading">공고를 불러오는 중...</div>
+              ) : jobs.length === 0 ? (
+                <p className="empty-message">아직 등록한 공고가 없어요 — [+ 공고 추가] 버튼으로 시작해보세요</p>
+              ) : null}
               {jobs.map((job) => (
                 <article key={job.id} className="job-card">
                   <div className="job-card-header">
@@ -393,9 +405,11 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               createPortal(<div className="toast toast-success">{collectedMessage}</div>, document.body)}
 
             <section className="job-list">
-              {collectedJobs.length === 0 && (
-                <p className="empty-message">공고를 불러와주세요 (공고 불러오기 버튼)</p>
-              )}
+              {isCollectedLoading ? (
+                <div className="job-list-loading">공고를 불러오는 중...</div>
+              ) : collectedJobs.length === 0 ? (
+                <p className="empty-message">아직 불러온 공고가 없어요 — [공고 불러오기]를 눌러 크롤링해보세요</p>
+              ) : null}
               {collectedJobs.map((job) => {
                 const scraped = scrapedIds.has(job.id)
                 return (

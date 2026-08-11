@@ -68,6 +68,13 @@
   padding: 40px;
 }
 
+.job-list-loading {
+  color: var(--text);
+  opacity: 0.6;
+  text-align: center;
+  padding: 40px;
+}
+
 .success-message {
   color: var(--offer-text);
   background: var(--offer-bg);
