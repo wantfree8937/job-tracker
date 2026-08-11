@@ -12,7 +12,7 @@ interface InterviewSetupModalProps {
 
 const TOPICS = [
   { value: 'TECHNICAL', label: '기술 질문 위주' },
-  { value: 'PORTFOLIO', label: '포트폴리오 질문 위주' },
+  { value: 'MOTIVE', label: '지원동기·인성 위주' },
   { value: 'MIXED', label: '혼합' },
 ]
 
@@ -106,7 +106,7 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
               onClick={() => setIsJobSelectOpen((v) => !v)}
               disabled={isLoading}
             >
-              <span>{selectedJob ? `${selectedJob.companyName} · ${selectedJob.position}` : '공고를 선택하세요 (선택)'}</span>
+              <span>{selectedJob ? `${selectedJob.companyName} · ${selectedJob.position}` : '공고를 선택하세요'}</span>
               <span className="interview-job-select-arrow">▼</span>
             </button>
             {isJobSelectOpen && (
@@ -120,7 +120,7 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
                     setIsJobSelectOpen(false)
                   }}
                 >
-                  공고를 선택하세요 (선택)
+                  공고를 선택하세요
                 </div>
                 {jobs.map((job) => (
                   <div
