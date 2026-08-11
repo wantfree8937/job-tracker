@@ -138,8 +138,10 @@ export function searchJobs(keyword: string): Promise<JobSearchResult> {
 }
 
 export interface InterviewQuestionRequest {
-  companyName: string
-  position: string
+  topic?: string // 'TECHNICAL' | 'PORTFOLIO' | 'MIXED'
+  difficulty?: string // 'EASY' | 'NORMAL' | 'HARD'
+  companyName?: string | null
+  position?: string | null
   region?: string | null
   experience?: string | null
   industry?: string | null

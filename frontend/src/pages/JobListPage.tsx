@@ -5,7 +5,7 @@ import StatusBadge from '../components/StatusBadge'
 import JobFormModal from '../components/JobFormModal'
 import KeywordsModal from '../components/KeywordsModal'
 import ConfirmModal from '../components/ConfirmModal'
-import InterviewModal from '../components/InterviewModal'
+import InterviewSetupModal from '../components/InterviewSetupModal'
 import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me, type CollectedJobSearchField } from '../api'
 import { ALL_STATUSES, STATUS_LABEL, type ApplicationStatus, type JobPosting, type JobStats, type CollectedJob } from '../types'
 
@@ -34,7 +34,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [keyword, setKeyword] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null)
-  const [interviewJob, setInterviewJob] = useState<JobPosting | null>(null)
+  const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false)
   const [error, setError] = useState('')
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
 
@@ -201,7 +201,11 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="job-list-page">
-      <Header onLogout={onLogout} onOpenKeywords={() => setIsKeywordsModalOpen(true)} />
+      <Header
+        onLogout={onLogout}
+        onOpenKeywords={() => setIsKeywordsModalOpen(true)}
+        onOpenInterview={() => setIsInterviewModalOpen(true)}
+      />
       <main className="content">
         {keywordsMessage &&
           createPortal(<div className="toast toast-success">{keywordsMessage}</div>, document.body)}
@@ -304,9 +308,6 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                       </select>
                       <button type="button" className="outline-button" onClick={() => openEditModal(job)}>
                         수정
-                      </button>
-                      <button type="button" className="outline-button" onClick={() => setInterviewJob(job)}>
-                        AI 면접
                       </button>
                       <button type="button" className="danger-button" onClick={() => handleDelete(job.id)}>
                         삭제
@@ -455,7 +456,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         onCancel={() => setDeleteTargetId(null)}
       />
 
-      {interviewJob && <InterviewModal job={interviewJob} onClose={() => setInterviewJob(null)} />}
+      <InterviewSetupModal open={isInterviewModalOpen} onClose={() => setIsInterviewModalOpen(false)} />
     </div>
   )
 }

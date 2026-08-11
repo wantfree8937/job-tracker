@@ -579,6 +579,13 @@
   margin-top: 8px;
 }
 
+.modal-section-label {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
 .interview-question-list {
   display: flex;
   flex-direction: column;
