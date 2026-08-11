@@ -6,9 +6,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // 개발 서버에서 /api 요청을 백엔드(8080)로 전달
+    // 개발 서버에서 /api 요청을 백엔드(Render)로 전달
     proxy: {
-      '/api': 'http://localhost:8080',
+      '/api': 'https://job-tracker-so4v.onrender.com',
     },
   },
   test: {
