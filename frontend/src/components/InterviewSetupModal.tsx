@@ -49,6 +49,7 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
   const selectedJob = jobs.find((j) => j.id === Number(selectedJobId))
 
   const handleClose = () => {
+    if (isLoading) return
     setQuestions([])
     setError('')
     onClose()
@@ -173,7 +174,7 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
         )}
 
         <div className="modal-actions">
-          <button type="button" className="outline-button" onClick={handleClose}>
+          <button type="button" className="outline-button" onClick={handleClose} disabled={isLoading}>
             닫기
           </button>
           <button type="button" className="primary-button" onClick={handleStart} disabled={isLoading}>
