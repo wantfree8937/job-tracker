@@ -77,6 +77,28 @@ public class CollectedJobService {
         return new CollectedJobLoadResult(loaded, skipped);
     }
 
+    // JobSearchService.search()가 찾은 공고를 저장한다 (크롤링과 분리된 트랜잭션 — DB 커넥션을 크롤링 동안 점유하지 않기 위함)
+    // filteredOut: 제목/회사명에 키워드가 없어 이미 걸러진 공고 수 (skipped 초기값)
+    @Transactional
+    public JobSearchResult saveMatchedJobs(String keyword, List<CollectedJob> matched, int filteredOut) {
+        int collected = 0;
+        int skipped = filteredOut;
+        for (CollectedJob job : matched) {
+            var existing = collectedJobRepository.findByJobKey(job.getJobKey());
+            if (existing.isPresent()) {
+                // 이미 수집된 공고: 새로 갱신된 필드(region/experience/industry)만 빈 값을 채워준다
+                if (JobSearchService.fillBlankFields(existing.get(), job)) {
+                    collectedJobRepository.save(existing.get());
+                }
+                skipped++;
+                continue;
+            }
+            collectedJobRepository.save(job);
+            collected++;
+        }
+        return new JobSearchResult(keyword, collected, skipped);
+    }
+
     // 수집 공고 목록 (keyword/source 필터 + mine=true일 때 내 관심 키워드로 추가 필터, 최신 등록순)
     // searchField: all(기본, 제목+회사명) / company(회사명만) / title(제목만)
     @Transactional(readOnly = true)

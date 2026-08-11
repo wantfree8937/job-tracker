@@ -51,6 +51,7 @@ public class JobSearchService {
 
     private final CollectedJobRepository collectedJobRepository;
     private final UserRepository userRepository;
+    private final CollectedJobService collectedJobService;
 
     private final RestClient restClient = RestClient.builder()
             .requestFactory(timeoutRequestFactory())
@@ -68,7 +69,7 @@ public class JobSearchService {
     }
 
     // 키워드로 원티드/잡코리아를 검색해 새 공고만 저장한다 (한쪽이 실패해도 다른 쪽은 시도, 둘 다 실패하면 예외)
-    @Transactional
+    // 크롤링(네트워크, 수십 초)은 트랜잭션 밖에서 수행 — DB 커넥션을 오래 점유하면 동시 요청 시 Hikari 풀이 고갈된다
     public JobSearchResult search(String keyword) {
         List<CollectedJob> found = new ArrayList<>();
         boolean wantedOk = collectQuietly(found, () -> searchWanted(keyword));
@@ -80,23 +81,8 @@ public class JobSearchService {
 
         // 제목/회사명 어디에도 키워드가 없는 무관한 공고를 걸러낸다
         List<CollectedJob> matched = filterByTitleOrCompany(found, keyword);
-
-        int collected = 0;
-        int skipped = found.size() - matched.size();
-        for (CollectedJob job : matched) {
-            var existing = collectedJobRepository.findByJobKey(job.getJobKey());
-            if (existing.isPresent()) {
-                // 이미 수집된 공고: 새로 갱신된 필드(region/experience/industry)만 빈 값을 채워준다
-                if (fillBlankFields(existing.get(), job)) {
-                    collectedJobRepository.save(existing.get());
-                }
-                skipped++;
-                continue;
-            }
-            collectedJobRepository.save(job);
-            collected++;
-        }
-        return new JobSearchResult(keyword, collected, skipped);
+        int filteredOut = found.size() - matched.size();
+        return collectedJobService.saveMatchedJobs(keyword, matched, filteredOut);
     }
 
     // existing의 region/experience/industry가 비어있고 incoming에 값이 있으면 채운다. 갱신 여부를 반환

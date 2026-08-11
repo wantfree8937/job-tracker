@@ -4,10 +4,14 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     hikari:
-      maximum-pool-size: 5        # Render 무료 Postgres 커넥션 부담 완화 (기본 10 → 5)
+      maximum-pool-size: 10       # 크롤링을 트랜잭션 밖으로 분리해 커넥션 점유 시간이 짧아짐 → 여유 확보 (5 → 10)
       minimum-idle: 1
-      connection-timeout: 3000    # 3초 내 커넥션 못 얻으면 즉시 실패(빠른 폴백) — 행 대기 500 방지
-      max-lifetime: 1800000
+      connection-timeout: 5000    # 크롤링 분리 후에도 여유 있게 (3초 → 5초)
+      validation-timeout: 1000
+      max-lifetime: 240000        # Render Postgres 유휴 커넥션 정리보다 짧게 (stale 커넥션 방지)
+      keepalive-time: 120000      # 2분마다 keepalive — 죽은 커넥션 미리 감지
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 60000  # 60초 이상 미반환 = 누수 의심 로그
   jpa:
     hibernate:
       ddl-auto: update
