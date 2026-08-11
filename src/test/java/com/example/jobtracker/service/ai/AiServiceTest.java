@@ -41,7 +41,7 @@ class AiServiceTest {
     @Test
     void 값이_있는_필드만_사용자_메시지에_포함한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                "토스", "안드로이드 개발자", null, "신입", null, null, null, null);
+                "토스", "안드로이드 개발자", null, "신입", null, null, null, null, null);
 
         String message = AiService.buildUserMessage(request);
 
@@ -52,7 +52,7 @@ class AiServiceTest {
     @Test
     void topic이_TECHNICAL이면_기술_면접_지시문을_포함한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                null, null, null, null, null, null, "TECHNICAL", "HARD");
+                null, null, null, null, null, null, "TECHNICAL", "HARD", null);
 
         String prompt = AiService.buildSystemPrompt(request, null);
 
@@ -62,7 +62,7 @@ class AiServiceTest {
     @Test
     void difficulty가_ENTRY이면_신입_지시문을_포함한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                null, null, null, null, null, null, null, "ENTRY");
+                null, null, null, null, null, null, null, "ENTRY", null);
 
         String prompt = AiService.buildSystemPrompt(request, null);
 
@@ -72,7 +72,7 @@ class AiServiceTest {
     @Test
     void topic과_difficulty가_없으면_MIXED와_NORMAL로_처리한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
 
         String prompt = AiService.buildSystemPrompt(request, null);
 
@@ -82,7 +82,7 @@ class AiServiceTest {
     @Test
     void profileText가_있으면_이력서_기반_지시문을_포함한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                null, null, null, null, null, null, "PORTFOLIO", null);
+                null, null, null, null, null, null, "PORTFOLIO", null, null);
 
         String prompt = AiService.buildSystemPrompt(request, "TRISENSE(반응 훈련 게임, Kotlin/Compose)");
 
@@ -94,7 +94,7 @@ class AiServiceTest {
     @Test
     void profileText가_없으면_일반적인_개발자_면접_질문을_생성한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                null, null, null, null, null, null, "PORTFOLIO", null);
+                null, null, null, null, null, null, "PORTFOLIO", null, null);
 
         String prompt = AiService.buildSystemPrompt(request, "");
 
@@ -104,7 +104,7 @@ class AiServiceTest {
     @Test
     void profileText와_채용공고가_모두_있으면_무관시_이력서_무시_지시문을_포함한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                "토스", null, null, null, null, null, "PORTFOLIO", null);
+                "토스", null, null, null, null, null, "PORTFOLIO", null, null);
 
         String prompt = AiService.buildSystemPrompt(request, "TRISENSE(반응 훈련 게임, Kotlin/Compose)");
 
@@ -114,7 +114,7 @@ class AiServiceTest {
     @Test
     void profileText가_없고_채용공고가_있으면_회사_포지션_중심_질문을_생성한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                "토스", "백엔드 개발자", null, null, null, null, null, null);
+                "토스", "백엔드 개발자", null, null, null, null, null, null, null);
 
         String prompt = AiService.buildSystemPrompt(request, null);
 
