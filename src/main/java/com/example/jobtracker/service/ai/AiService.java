@@ -14,20 +14,35 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /** opencode-go API로 채용공고 정보 기반 예상 면접 질문을 생성한다 (API 키 노출 방지용 백엔드 프록시) */
 @Slf4j
 @Service
 public class AiService {
 
-    private static final String SYSTEM_PROMPT = """
+    private static final String INTRO = """
             너는 한국 IT 기업의 면접관이다. 지원자는 신입 안드로이드 개발자로,
             Kotlin/Compose/Clean Architecture를 공부했고 포트폴리오는
             TRISENSE(반응 훈련 게임, 1인 출시, MVI+Room+Hilt), 딱지금(최저가 추적, 4인 팀, FCM+Firestore+Koin),
             머니로그(ML Kit OCR 가계부)가 있다.
-            아래 채용공고 정보를 보고 예상 면접 질문 5개를 한국어로 생성해라.
-            질문은 반드시 JSON 문자열 배열로만 응답해라 (마크다운/설명 금지).
             """;
+
+    private static final String TECHNICAL_INSTRUCTION =
+            "지원자의 기술 역량을 검증하는 기술 면접 질문 5개를 생성해라 " +
+            "(Kotlin/Android/Compose/Clean Architecture/데이터베이스/네트워크 등 현직 개발자 수준).";
+    private static final String PORTFOLIO_INSTRUCTION =
+            "지원자의 포트폴리오(TRISENSE, 딱지금, 머니로그)를 기반으로 프로젝트 경험을 검증하는 질문 5개를 생성해라 " +
+            "(구현 결정/트러블슈팅/협업 경험 위주).";
+    private static final String MIXED_INSTRUCTION =
+            "기술 역량 질문과 포트폴리오 프로젝트 경험 질문을 섞어서 5개 생성해라.";
+
+    private static final String EASY_INSTRUCTION = "난이도는 쉬움: 기초 개념이나 개인 경험을 묻는 쉬운 질문으로 구성해라.";
+    private static final String NORMAL_INSTRUCTION = "난이도는 보통: 일반적인 수준의 질문으로 구성해라.";
+    private static final String HARD_INSTRUCTION = "난이도는 어려움: 심화 개념, 트러블슈팅, 아키텍처 설계를 묻는 어려운 질문으로 구성해라.";
+
+    private static final String OUTPUT_FORMAT_INSTRUCTION =
+            "질문은 반드시 JSON 문자열 배열로만 응답해라 (마크다운/설명 금지).";
 
     private final String apiKey;
     private final RestClient restClient;
@@ -48,7 +63,7 @@ public class AiService {
                     .body(Map.of(
                             "model", "deepseek-v4-flash",
                             "messages", List.of(
-                                    Map.of("role", "system", "content", SYSTEM_PROMPT),
+                                    Map.of("role", "system", "content", buildSystemPrompt(request)),
                                     Map.of("role", "user", "content", buildUserMessage(request))
                             ),
                             "max_tokens", 4000
@@ -61,6 +76,36 @@ public class AiService {
         }
 
         return new InterviewQuestionResponse(parseQuestions(responseBody));
+    }
+
+    // topic/difficulty와 채용공고 정보 유무에 따라 시스템 프롬프트를 동적으로 구성한다
+    static String buildSystemPrompt(InterviewQuestionRequest request) {
+        StringBuilder sb = new StringBuilder(INTRO);
+
+        sb.append(switch (request.topic() == null ? "MIXED" : request.topic()) {
+            case "TECHNICAL" -> TECHNICAL_INSTRUCTION;
+            case "PORTFOLIO" -> PORTFOLIO_INSTRUCTION;
+            default -> MIXED_INSTRUCTION;
+        }).append("\n");
+
+        sb.append(switch (request.difficulty() == null ? "NORMAL" : request.difficulty()) {
+            case "EASY" -> EASY_INSTRUCTION;
+            case "HARD" -> HARD_INSTRUCTION;
+            default -> NORMAL_INSTRUCTION;
+        }).append("\n");
+
+        sb.append(hasJobInfo(request)
+                ? "아래 채용공고 정보를 참고해서 질문을 생성해라.\n"
+                : "특정 채용공고 없이 일반적인 면접이라고 가정해라.\n");
+
+        sb.append(OUTPUT_FORMAT_INSTRUCTION);
+        return sb.toString();
+    }
+
+    private static boolean hasJobInfo(InterviewQuestionRequest request) {
+        return Stream.of(request.companyName(), request.position(), request.region(),
+                        request.experience(), request.industry(), request.memo())
+                .anyMatch(v -> v != null && !v.isBlank());
     }
 
     // 요청에 담긴 값(있는 필드만)으로 사용자 메시지를 구성한다

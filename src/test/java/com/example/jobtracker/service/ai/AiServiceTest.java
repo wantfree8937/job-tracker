@@ -41,11 +41,31 @@ class AiServiceTest {
     @Test
     void 값이_있는_필드만_사용자_메시지에_포함한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                "토스", "안드로이드 개발자", null, "신입", null, null);
+                "토스", "안드로이드 개발자", null, "신입", null, null, null, null);
 
         String message = AiService.buildUserMessage(request);
 
         assertThat(message).contains("회사명: 토스", "포지션: 안드로이드 개발자", "경력: 신입");
         assertThat(message).doesNotContain("지역:", "업종:", "메모:");
+    }
+
+    @Test
+    void topic이_TECHNICAL이면_기술_면접_지시문을_포함한다() {
+        InterviewQuestionRequest request = new InterviewQuestionRequest(
+                null, null, null, null, null, null, "TECHNICAL", "HARD");
+
+        String prompt = AiService.buildSystemPrompt(request);
+
+        assertThat(prompt).contains("기술 면접 질문 5개").contains("심화").contains("일반적인 면접");
+    }
+
+    @Test
+    void topic과_difficulty가_없으면_MIXED와_NORMAL로_처리한다() {
+        InterviewQuestionRequest request = new InterviewQuestionRequest(
+                "토스", null, null, null, null, null, null, null);
+
+        String prompt = AiService.buildSystemPrompt(request);
+
+        assertThat(prompt).contains("섞어서").contains("보통").contains("채용공고 정보를 참고");
     }
 }
