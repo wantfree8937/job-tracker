@@ -56,7 +56,7 @@ class AiServiceTest {
 
         String prompt = AiService.buildSystemPrompt(request, null);
 
-        assertThat(prompt).contains("기술 면접 질문 5개").contains("심화").contains("일반적인 면접");
+        assertThat(prompt).contains("기술 면접 질문 5개").contains("도전적").contains("일반적인 면접");
     }
 
     @Test

@@ -27,7 +27,7 @@ public class AiService {
     private static final String INTRO = "너는 한국 IT 기업의 면접관이다.\n";
 
     private static final String TECHNICAL_INSTRUCTION =
-            "지원자의 기술 역량을 검증하는 기술 면접 질문 5개를 생성해라 (개발 전반에 대한 현직 개발자 수준).";
+            "지원자의 기술 역량을 검증하는 기술 면접 질문 5개를 생성해라.";
     private static final String TECHNICAL_WITH_PROFILE_INSTRUCTION =
             "지원자의 이력서에 언급된 기술 스택 위주로, 일반적인 기술 질문도 섞어서 기술 면접 질문 5개를 생성해라.";
     private static final String PORTFOLIO_INSTRUCTION =
@@ -40,8 +40,10 @@ public class AiService {
             "이력서 기반 프로젝트 경험 질문과 일반 기술 역량 질문을 섞어서 5개 생성해라.";
 
     private static final String EASY_INSTRUCTION = "난이도는 쉬움: 기초 개념이나 개인 경험을 묻는 쉬운 질문으로 구성해라.";
-    private static final String NORMAL_INSTRUCTION = "난이도는 보통: 일반적인 수준의 질문으로 구성해라.";
-    private static final String HARD_INSTRUCTION = "난이도는 어려움: 심화 개념, 트러블슈팅, 아키텍처 설계를 묻는 어려운 질문으로 구성해라.";
+    private static final String NORMAL_INSTRUCTION =
+            "난이도는 보통: 신입이 답할 수 있는 실무 기반 질문으로 구성해라 (프로젝트 경험, 기본 개념, 기술 스택 활용 위주).";
+    private static final String HARD_INSTRUCTION =
+            "난이도는 어려움: 신입에게 도전적이되 답변 가능한 수준의 질문으로 구성해라 (경험 기반 트러블슈팅, 설계 의도, 협업 경험 위주). 시니어급의 과도하게 어려운 질문은 피해라.";
 
     private static final String OUTPUT_FORMAT_INSTRUCTION =
             "질문은 반드시 JSON 문자열 배열로만 응답해라 (마크다운/설명 금지).";
