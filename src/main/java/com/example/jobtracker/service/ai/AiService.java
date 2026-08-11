@@ -39,6 +39,10 @@ public class AiService {
             "기술 역량 질문과 프로젝트 경험 질문을 섞어서 5개 생성해라.";
     private static final String MIXED_WITH_PROFILE_INSTRUCTION =
             "이력서 기반 프로젝트 경험 질문과 일반 기술 역량 질문을 섞어서 5개 생성해라.";
+    private static final String NO_PROFILE_WITH_JOB_INSTRUCTION =
+            "이력서 정보가 없으니, 채용공고 정보(회사/포지션/요구사항)를 바탕으로 지원 동기, 회사/업종 이해도, 포지션 요구사항에 대한 준비, 직무 관련 경험 유무 등을 묻는 질문 5개를 생성해라.";
+    private static final String MISMATCH_INSTRUCTION =
+            "채용공고와 이력서/포트폴리오가 직무/기술 스택 기준으로 전혀 무관하다고 판단되면, 이력서 내용은 무시하고 채용공고 정보(회사/포지션/요구사항)만으로 질문을 구성해라.";
 
     private static final String ENTRY_INSTRUCTION =
             "난이도는 신입: 기술 질문은 지원자가 사용한 기술의 기본 개념 수준으로만 묻고, 프로젝트 경험(무엇을 했는지, 왜 그렇게 했는지, 어떤 어려움을 겪었고 어떻게 해결했는지)과 협업 경험, 성향, 문제 해결 태도, 성장 가능성 위주로 질문해라. 압박 질문이나 시니어급 질문은 금지한다.";
@@ -117,17 +121,25 @@ public class AiService {
     // topic/difficulty와 채용공고 정보, 이력서(profileText) 유무에 따라 시스템 프롬프트를 동적으로 구성한다
     static String buildSystemPrompt(InterviewQuestionRequest request, String profileText) {
         boolean hasProfile = profileText != null && !profileText.isBlank();
+        boolean hasJobInfo = hasJobInfo(request);
 
         StringBuilder sb = new StringBuilder(INTRO);
         if (hasProfile) {
             sb.append("지원자의 이력서/포트폴리오: ").append(profileText).append("\n");
+            if (hasJobInfo) {
+                sb.append(MISMATCH_INSTRUCTION).append("\n");
+            }
         }
 
-        sb.append(switch (request.topic() == null ? "MIXED" : request.topic()) {
-            case "TECHNICAL" -> hasProfile ? TECHNICAL_WITH_PROFILE_INSTRUCTION : TECHNICAL_INSTRUCTION;
-            case "PORTFOLIO" -> hasProfile ? PORTFOLIO_WITH_PROFILE_INSTRUCTION : PORTFOLIO_INSTRUCTION;
-            default -> hasProfile ? MIXED_WITH_PROFILE_INSTRUCTION : MIXED_INSTRUCTION;
-        }).append("\n");
+        if (!hasProfile && hasJobInfo) {
+            sb.append(NO_PROFILE_WITH_JOB_INSTRUCTION).append("\n");
+        } else {
+            sb.append(switch (request.topic() == null ? "MIXED" : request.topic()) {
+                case "TECHNICAL" -> hasProfile ? TECHNICAL_WITH_PROFILE_INSTRUCTION : TECHNICAL_INSTRUCTION;
+                case "PORTFOLIO" -> hasProfile ? PORTFOLIO_WITH_PROFILE_INSTRUCTION : PORTFOLIO_INSTRUCTION;
+                default -> hasProfile ? MIXED_WITH_PROFILE_INSTRUCTION : MIXED_INSTRUCTION;
+            }).append("\n");
+        }
 
         sb.append(switch (request.difficulty() == null ? "NORMAL" : request.difficulty()) {
             case "ENTRY" -> ENTRY_INSTRUCTION;
@@ -136,7 +148,7 @@ public class AiService {
             default -> NORMAL_INSTRUCTION;
         }).append("\n");
 
-        sb.append(hasJobInfo(request)
+        sb.append(hasJobInfo
                 ? "아래 채용공고 정보를 참고해서 질문을 생성해라.\n"
                 : "특정 채용공고 없이 일반적인 면접이라고 가정해라.\n");
 
