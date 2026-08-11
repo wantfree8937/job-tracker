@@ -39,6 +39,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [profileText, setProfileText] = useState<string | null>(null)
   const [hasResumeFile, setHasResumeFile] = useState(false)
+  const [resumeFileName, setResumeFileName] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -57,16 +58,18 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [isKeywordsModalOpen, setIsKeywordsModalOpen] = useState(false)
   const [keywordsMessage, setKeywordsMessage] = useState('')
 
-  // AI 면접 모달 열릴 때 이력서 참고 상태 표시용으로 조회
+  // 이력서 캐시 — 페이지 진입 시 1회만 조회 (모달 열 때마다 재조회하지 않음)
   useEffect(() => {
-    if (!isInterviewModalOpen) return
     getProfile()
       .then((res) => setProfileText(res.profileText ?? ''))
       .catch(() => setProfileText(null))
     getProfileFile()
-      .then((file) => setHasResumeFile(!!file?.fileName))
+      .then((file) => {
+        setHasResumeFile(!!file?.fileName)
+        setResumeFileName(file?.fileName ?? null)
+      })
       .catch(() => setHasResumeFile(false))
-  }, [isInterviewModalOpen])
+  }, [])
 
   // 메시지는 3초 후 자동으로 사라진다 (새 메시지가 오면 이전 타이머는 취소)
   useEffect(() => {
@@ -498,6 +501,14 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         <ProfileModal
           open={isProfileModalOpen}
           onClose={() => setIsProfileModalOpen(false)}
+          initialProfileText={profileText ?? ''}
+          initialHasFile={hasResumeFile}
+          initialFileName={resumeFileName}
+          onProfileSaved={setProfileText}
+          onFileSaved={(fileName) => {
+            setHasResumeFile(!!fileName)
+            setResumeFileName(fileName)
+          }}
         />
       )}
     </div>

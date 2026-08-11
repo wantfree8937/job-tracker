@@ -1,28 +1,42 @@
 import { useState, useEffect } from 'react'
-import { getProfile, saveProfile, getProfileFile, saveProfileFile, deleteProfileFile } from '../api'
+import { saveProfile, saveProfileFile, deleteProfileFile } from '../api'
 import type { ProfileFileResponse } from '../api'
 
 interface ProfileModalProps {
   open: boolean
   onClose: () => void
+  initialProfileText: string
+  initialHasFile: boolean
+  initialFileName: string | null
+  onProfileSaved: (profileText: string) => void
+  onFileSaved: (fileName: string | null) => void
 }
 
 const MAX_LENGTH = 5000
 
 type ProfileTab = 'text' | 'pdf'
 
-// 이력서/포트폴리오 저장 모달 (AI 면접이 참고)
-export default function ProfileModal({ open, onClose }: ProfileModalProps) {
+// 이력서/포트폴리오 저장 모달 (AI 면접이 참고) — 부모가 캐시한 초기값으로 즉시 표시
+export default function ProfileModal({
+  open,
+  onClose,
+  initialProfileText,
+  initialHasFile,
+  initialFileName,
+  onProfileSaved,
+  onFileSaved,
+}: ProfileModalProps) {
   const [tab, setTab] = useState<ProfileTab>('text')
-  const [profileText, setProfileText] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [profileText, setProfileText] = useState(initialProfileText)
   const [isSaving, setIsSaving] = useState(false)
   const [isParsing, setIsParsing] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [savedFile, setSavedFile] = useState<ProfileFileResponse | null>(null)
+  const [savedFile, setSavedFile] = useState<ProfileFileResponse | null>(
+    initialHasFile ? { fileName: initialFileName, fileType: null } : null,
+  )
 
   useEffect(() => {
     if (!open) return
@@ -30,19 +44,11 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     setError('')
     setMessage('')
     setPdfFile(null)
-    setIsLoading(true)
-    Promise.all([getProfile(), getProfileFile()])
-      .then(([profile, file]) => {
-        setProfileText(profile.profileText ?? '')
-        setSavedFile(file?.fileName ? file : null)
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : '이력서를 불러오지 못했습니다.'))
-      .finally(() => setIsLoading(false))
   }, [open])
 
   if (!open) return null
 
-  const isBusy = isLoading || isSaving || isParsing
+  const isBusy = isSaving || isParsing
 
   const handleSave = async () => {
     setError('')
@@ -51,6 +57,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     try {
       await saveProfile(profileText)
       setMessage('이력서가 저장되었어요')
+      onProfileSaved(profileText)
     } catch (err) {
       setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.')
     } finally {
@@ -68,6 +75,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
       setSavedFile(res)
       setPdfFile(null)
       setMessage('파일이 저장되었어요')
+      onFileSaved(res.fileName)
     } catch (err) {
       setError(err instanceof Error ? err.message : '파일을 저장할 수 없어요.')
     } finally {
@@ -100,6 +108,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     try {
       await deleteProfileFile()
       setSavedFile(null)
+      onFileSaved(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : '파일을 삭제할 수 없어요.')
     }
@@ -109,7 +118,6 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     <div className="modal-overlay" onClick={isBusy ? undefined : onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>내 이력서</h2>
-        {isLoading && !profileText && <p>불러오는 중...</p>}
         {error && <p className="error-message">{error}</p>}
         {message && <p className="success-message">{message}</p>}
 
@@ -181,7 +189,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
           <button type="button" className="outline-button" onClick={onClose} disabled={isBusy}>
             닫기
           </button>
-          <button type="button" className="primary-button" onClick={handleSave} disabled={isSaving || isLoading}>
+          <button type="button" className="primary-button" onClick={handleSave} disabled={isSaving}>
             {isSaving ? '저장 중...' : '저장'}
           </button>
         </div>
