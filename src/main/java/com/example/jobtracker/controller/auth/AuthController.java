@@ -81,8 +81,17 @@ public class AuthController {
     }
 
     @GetMapping("/me/profile/file")
-    public ResponseEntity<byte[]> getProfileFile(Authentication authentication) {
-        ResumeFileData file = authService.getProfileFile(authentication.getName());
+    public ResponseEntity<ProfileFileResponse> getProfileFile(Authentication authentication) {
+        ProfileFileResponse meta = authService.getProfileFile(authentication.getName());
+        if (meta == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(meta);
+    }
+
+    @GetMapping("/me/profile/file/download")
+    public ResponseEntity<byte[]> downloadProfileFile(Authentication authentication) {
+        ResumeFileData file = authService.downloadProfileFile(authentication.getName());
         if (file == null) {
             return ResponseEntity.notFound().build();
         }

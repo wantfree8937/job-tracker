@@ -254,13 +254,12 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ⑮ 이력서 파일 저장 후 다운로드 시 원본 그대로 조회
+    // ⑮ 이력서 파일 저장 후 메타 조회 시 파일명/타입 반영 확인
     @Test
-    void saveAndDownloadProfileFileTest() throws Exception {
+    void saveAndGetProfileFileMetaTest() throws Exception {
         signUp("profile-file@test.com");
         String token = jwtUtil.generateToken("profile-file@test.com");
-        byte[] pdfBytes = minimalPdfBytes();
-        MockMultipartFile file = new MockMultipartFile("file", "이력서.pdf", "application/pdf", pdfBytes);
+        MockMultipartFile file = new MockMultipartFile("file", "이력서.pdf", "application/pdf", minimalPdfBytes());
 
         mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(file)
                         .header("Authorization", "Bearer " + token))
@@ -268,6 +267,24 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.fileName").value("이력서.pdf"));
 
         mockMvc.perform(get("/api/auth/me/profile/file").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fileName").value("이력서.pdf"))
+                .andExpect(jsonPath("$.fileType").value("application/pdf"));
+    }
+
+    // ⑮-1 이력서 파일 저장 후 다운로드 시 원본 그대로 조회
+    @Test
+    void downloadProfileFileTest() throws Exception {
+        signUp("profile-file-download@test.com");
+        String token = jwtUtil.generateToken("profile-file-download@test.com");
+        byte[] pdfBytes = minimalPdfBytes();
+        MockMultipartFile file = new MockMultipartFile("file", "이력서.pdf", "application/pdf", pdfBytes);
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(file)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/auth/me/profile/file/download").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Content-Disposition"))
                 .andExpect(content().bytes(pdfBytes));

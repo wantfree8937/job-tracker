@@ -183,12 +183,23 @@ public class AuthService {
         user.setResumeFileName(file.getOriginalFilename());
         user.setResumeFileType(file.getContentType());
 
-        return new ProfileFileResponse(user.getResumeFileName(), text);
+        return new ProfileFileResponse(user.getResumeFileName(), user.getResumeFileType(), text);
     }
 
-    // 이력서 원본 파일 조회 (저장된 파일이 없으면 null)
+    // 이력서 원본 파일 메타 조회 (저장된 파일이 없으면 null)
     @Transactional(readOnly = true)
-    public ResumeFileData getProfileFile(String email) {
+    public ProfileFileResponse getProfileFile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(InvalidCredentialsException::new);
+        if (user.getResumeFile() == null) {
+            return null;
+        }
+        return new ProfileFileResponse(user.getResumeFileName(), user.getResumeFileType(), null);
+    }
+
+    // 이력서 원본 파일 다운로드 (저장된 파일이 없으면 null)
+    @Transactional(readOnly = true)
+    public ResumeFileData downloadProfileFile(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(InvalidCredentialsException::new);
         if (user.getResumeFile() == null) {
