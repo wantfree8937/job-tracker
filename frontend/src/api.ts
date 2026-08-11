@@ -155,3 +155,15 @@ export interface InterviewQuestionResponse {
 export function getInterviewQuestions(input: InterviewQuestionRequest): Promise<InterviewQuestionResponse> {
   return request('/ai/interview/questions', { method: 'POST', body: JSON.stringify(input) })
 }
+
+export interface ProfileResponse {
+  profileText: string | null
+}
+
+export function getProfile(): Promise<ProfileResponse> {
+  return request('/auth/me/profile')
+}
+
+export function saveProfile(profileText: string): Promise<ProfileResponse> {
+  return request('/auth/me/profile', { method: 'PUT', body: JSON.stringify({ profileText }) })
+}

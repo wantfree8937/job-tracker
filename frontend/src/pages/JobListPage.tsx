@@ -6,6 +6,7 @@ import JobFormModal from '../components/JobFormModal'
 import KeywordsModal from '../components/KeywordsModal'
 import ConfirmModal from '../components/ConfirmModal'
 import InterviewSetupModal from '../components/InterviewSetupModal'
+import ProfileModal from '../components/ProfileModal'
 import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me, type CollectedJobSearchField } from '../api'
 import { ALL_STATUSES, STATUS_LABEL, type ApplicationStatus, type JobPosting, type JobStats, type CollectedJob } from '../types'
 
@@ -35,6 +36,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null)
   const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false)
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [error, setError] = useState('')
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
 
@@ -205,6 +207,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         onLogout={onLogout}
         onOpenKeywords={() => setIsKeywordsModalOpen(true)}
         onOpenInterview={() => setIsInterviewModalOpen(true)}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
       />
       <main className="content">
         {keywordsMessage &&
@@ -457,6 +460,13 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
       />
 
       <InterviewSetupModal open={isInterviewModalOpen} onClose={() => setIsInterviewModalOpen(false)} />
+
+      {isProfileModalOpen && (
+        <ProfileModal
+          open={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+        />
+      )}
     </div>
   )
 }
