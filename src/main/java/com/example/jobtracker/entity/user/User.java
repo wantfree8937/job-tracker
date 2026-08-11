@@ -3,6 +3,8 @@ package com.example.jobtracker.entity.user;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -44,7 +46,7 @@ public class User {
     private String resumeFileName;
     @Column(columnDefinition = "TEXT")
     private String resumeFileType;
-    @Lob
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     @Column(columnDefinition = "bytea")
     private byte[] resumeFile;
 }
