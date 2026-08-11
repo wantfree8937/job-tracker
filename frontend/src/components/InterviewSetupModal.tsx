@@ -7,6 +7,7 @@ interface InterviewSetupModalProps {
   onClose: () => void
   jobs: JobPosting[]
   profileText: string | null
+  hasResumeFile: boolean
 }
 
 const TOPICS = [
@@ -22,7 +23,7 @@ const DIFFICULTIES = [
 ]
 
 // AI 면접 설정(유형/난이도) 선택 → 예상 질문 생성 모달
-export default function InterviewSetupModal({ open, onClose, jobs, profileText }: InterviewSetupModalProps) {
+export default function InterviewSetupModal({ open, onClose, jobs, profileText, hasResumeFile }: InterviewSetupModalProps) {
   const [selectedJobId, setSelectedJobId] = useState('')
   const [topic, setTopic] = useState('MIXED')
   const [difficulty, setDifficulty] = useState('NORMAL')
@@ -79,7 +80,9 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText }
         <h2>AI 면접 연습</h2>
 
         {profileText?.trim() ? (
-          <p className="profile-hint">📄 저장된 이력서/포트폴리오를 참고해 질문을 만듭니다</p>
+          <p className="profile-hint">📄 저장된 이력서를 참고해 질문을 만듭니다</p>
+        ) : hasResumeFile ? (
+          <p className="profile-hint">📎 이력서 파일이 있어요 — 파일 내용도 참고합니다</p>
         ) : (
           <p className="profile-hint profile-hint-empty">이력서가 아직 없어요 — 일반 질문으로 진행됩니다 ([내 이력서]에서 등록 가능)</p>
         )}

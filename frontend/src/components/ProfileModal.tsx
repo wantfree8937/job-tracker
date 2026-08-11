@@ -127,7 +127,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     <div className="modal-overlay" onClick={isBusy ? undefined : onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>내 이력서</h2>
-        {isLoading && <p>불러오는 중...</p>}
+        {isLoading && !profileText && <p>불러오는 중...</p>}
         {error && <p className="error-message">{error}</p>}
         {message && <p className="success-message">{message}</p>}
 

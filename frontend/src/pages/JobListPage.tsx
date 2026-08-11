@@ -7,7 +7,7 @@ import KeywordsModal from '../components/KeywordsModal'
 import ConfirmModal from '../components/ConfirmModal'
 import InterviewSetupModal from '../components/InterviewSetupModal'
 import ProfileModal from '../components/ProfileModal'
-import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me, getProfile, type CollectedJobSearchField } from '../api'
+import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me, getProfile, getProfileFile, type CollectedJobSearchField } from '../api'
 import { ALL_STATUSES, STATUS_LABEL, type ApplicationStatus, type JobPosting, type JobStats, type CollectedJob } from '../types'
 
 // 상태별 통계 카드 이모지
@@ -38,6 +38,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [profileText, setProfileText] = useState<string | null>(null)
+  const [hasResumeFile, setHasResumeFile] = useState(false)
   const [error, setError] = useState('')
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -62,6 +63,9 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     getProfile()
       .then((res) => setProfileText(res.profileText ?? ''))
       .catch(() => setProfileText(null))
+    getProfileFile()
+      .then((file) => setHasResumeFile(!!file?.fileName))
+      .catch(() => setHasResumeFile(false))
   }, [isInterviewModalOpen])
 
   // 메시지는 3초 후 자동으로 사라진다 (새 메시지가 오면 이전 타이머는 취소)
@@ -487,6 +491,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
         onClose={() => setIsInterviewModalOpen(false)}
         jobs={jobs}
         profileText={profileText}
+        hasResumeFile={hasResumeFile}
       />
 
       {isProfileModalOpen && (
