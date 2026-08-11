@@ -16,16 +16,8 @@ import com.example.jobtracker.exception.InvalidCredentialsException;
 import com.example.jobtracker.exception.ProfileParseFailedException;
 import com.example.jobtracker.repository.user.UserRepository;
 import com.example.jobtracker.security.JwtUtil;
+import com.example.jobtracker.util.ResumeTextExtractor;
 import lombok.RequiredArgsConstructor;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
-import org.apache.poi.hslf.usermodel.HSLFSlide;
-import org.apache.poi.hslf.usermodel.HSLFSlideShow;
-import org.apache.poi.hslf.usermodel.HSLFTextParagraph;
-import org.apache.poi.xslf.usermodel.XMLSlideShow;
-import org.apache.poi.xslf.usermodel.XSLFShape;
-import org.apache.poi.xslf.usermodel.XSLFSlide;
-import org.apache.poi.xslf.usermodel.XSLFTextShape;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,15 +37,11 @@ import java.util.regex.Pattern;
 public class AuthService {
 
     private static final Pattern HTTP_SCHEME = Pattern.compile("^https?://", Pattern.CASE_INSENSITIVE);
-    private static final int PROFILE_TEXT_MAX_LENGTH = 5000;
     private static final Set<String> ALLOWED_URL_HOSTS = Set.of(
             "notion.so", "www.notion.so", "notion.site", "www.notion.site",
             "github.com", "www.github.com", "raw.githubusercontent.com",
             "velog.io", "www.velog.io"
     );
-    private static final String PPTX_CONTENT_TYPE =
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-    private static final String PPT_CONTENT_TYPE = "application/vnd.ms-powerpoint";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -160,12 +148,12 @@ public class AuthService {
     // script/style 태그를 제거한 본문 텍스트 추출 (최대 5000자)
     static String extractBodyText(Document doc) {
         doc.select("script, style").remove();
-        return truncate(doc.body().text());
+        return ResumeTextExtractor.truncate(doc.body().text());
     }
 
     // 이력서 파일(PDF/PPT/PPTX)에서 텍스트 추출 (최대 5000자)
     public ProfileTextResponse parseProfilePdf(MultipartFile file) {
-        return new ProfileTextResponse(extractResumeText(file));
+        return new ProfileTextResponse(ResumeTextExtractor.extractResumeText(file));
     }
 
     // 이력서 원본 파일 저장 + 텍스트 추출 (다운로드용 원본은 DB에 그대로 보관)
@@ -174,7 +162,7 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(InvalidCredentialsException::new);
 
-        String text = extractResumeText(file);
+        String text = ResumeTextExtractor.extractResumeText(file);
         try {
             user.setResumeFile(file.getBytes());
         } catch (IOException e) {
@@ -216,69 +204,6 @@ public class AuthService {
         user.setResumeFileName(null);
         user.setResumeFileType(null);
         user.setResumeFile(null);
-    }
-
-    // PDF/PPT/PPTX 검증 후 텍스트 추출 (최대 5000자), 파일 저장 API와 공용
-    private String extractResumeText(MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new ProfileParseFailedException("PDF/PPT/PPTX 파일만 업로드할 수 있습니다");
-        }
-
-        String contentType = file.getContentType();
-        String filename = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
-
-        try {
-            if ("application/pdf".equals(contentType) || filename.endsWith(".pdf")) {
-                return extractPdfText(file);
-            }
-            if (PPTX_CONTENT_TYPE.equals(contentType) || filename.endsWith(".pptx")) {
-                return extractPptxText(file);
-            }
-            if (PPT_CONTENT_TYPE.equals(contentType) || filename.endsWith(".ppt")) {
-                return extractPptText(file);
-            }
-        } catch (Exception e) {
-            throw new ProfileParseFailedException("파일에서 텍스트를 추출할 수 없습니다");
-        }
-
-        throw new ProfileParseFailedException("PDF/PPT/PPTX 파일만 업로드할 수 있습니다");
-    }
-
-    private static String extractPdfText(MultipartFile file) throws Exception {
-        try (PDDocument document = PDDocument.load(file.getInputStream())) {
-            return truncate(new PDFTextStripper().getText(document));
-        }
-    }
-
-    private static String extractPptxText(MultipartFile file) throws Exception {
-        try (XMLSlideShow slideShow = new XMLSlideShow(file.getInputStream())) {
-            StringBuilder sb = new StringBuilder();
-            for (XSLFSlide slide : slideShow.getSlides()) {
-                for (XSLFShape shape : slide.getShapes()) {
-                    if (shape instanceof XSLFTextShape textShape) {
-                        sb.append(textShape.getText()).append('\n');
-                    }
-                }
-            }
-            return truncate(sb.toString());
-        }
-    }
-
-    private static String extractPptText(MultipartFile file) throws Exception {
-        try (HSLFSlideShow slideShow = new HSLFSlideShow(file.getInputStream())) {
-            StringBuilder sb = new StringBuilder();
-            for (HSLFSlide slide : slideShow.getSlides()) {
-                for (List<HSLFTextParagraph> paragraphs : slide.getTextParagraphs()) {
-                    sb.append(HSLFTextParagraph.getText(paragraphs)).append('\n');
-                }
-            }
-            return truncate(sb.toString());
-        }
-    }
-
-    private static String truncate(String text) {
-        String trimmed = text == null ? "" : text.trim();
-        return trimmed.length() > PROFILE_TEXT_MAX_LENGTH ? trimmed.substring(0, PROFILE_TEXT_MAX_LENGTH) : trimmed;
     }
 
     private List<String> normalizeKeywords(List<String> keywords) {

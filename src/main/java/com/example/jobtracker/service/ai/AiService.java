@@ -6,6 +6,7 @@ import com.example.jobtracker.entity.user.User;
 import com.example.jobtracker.exception.AiRequestFailedException;
 import com.example.jobtracker.exception.InvalidCredentialsException;
 import com.example.jobtracker.repository.user.UserRepository;
+import com.example.jobtracker.util.ResumeTextExtractor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -78,7 +79,7 @@ public class AiService {
                     .body(Map.of(
                             "model", "deepseek-v4-flash",
                             "messages", List.of(
-                                    Map.of("role", "system", "content", buildSystemPrompt(request, user.getProfileText())),
+                                    Map.of("role", "system", "content", buildSystemPrompt(request, resolveProfileText(user))),
                                     Map.of("role", "user", "content", buildUserMessage(request))
                             ),
                             "max_tokens", 4000
@@ -91,6 +92,24 @@ public class AiService {
         }
 
         return new InterviewQuestionResponse(parseQuestions(responseBody));
+    }
+
+    // profileText가 비어있으면 업로드된 이력서 원본 파일에서 텍스트를 추출해 대신 사용한다
+    private String resolveProfileText(User user) {
+        String profileText = user.getProfileText();
+        if (profileText != null && !profileText.isBlank()) {
+            return profileText;
+        }
+        if (user.getResumeFile() == null) {
+            return null;
+        }
+        try {
+            return ResumeTextExtractor.extractResumeText(
+                    user.getResumeFile(), user.getResumeFileType(), user.getResumeFileName());
+        } catch (Exception e) {
+            log.warn("이력서 파일 텍스트 추출 실패: {}", e.getMessage());
+            return null;
+        }
     }
 
     // topic/difficulty와 채용공고 정보, 이력서(profileText) 유무에 따라 시스템 프롬프트를 동적으로 구성한다
