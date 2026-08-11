@@ -22,7 +22,7 @@ export default function Header({
           관심 분야
         </button>
         <button type="button" onClick={onOpenInterview}>
-          AI 면접
+          AI 면접 질문
         </button>
         <button type="button" onClick={onOpenProfile}>
           내 이력서

@@ -87,7 +87,7 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
   return (
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>AI 면접 연습</h2>
+        <h2>AI 면접 질문 연습</h2>
 
         {profileText?.trim() ? (
           <p className="profile-hint">📄 저장된 이력서를 참고해 질문을 만듭니다</p>
