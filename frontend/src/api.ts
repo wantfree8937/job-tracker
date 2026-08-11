@@ -152,6 +152,7 @@ export interface InterviewQuestionRequest {
 
 export interface InterviewQuestionResponse {
   questions: string[]
+  usedResume?: boolean
 }
 
 export function getInterviewQuestions(input: InterviewQuestionRequest): Promise<InterviewQuestionResponse> {

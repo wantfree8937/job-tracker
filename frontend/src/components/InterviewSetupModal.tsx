@@ -29,6 +29,7 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
   const [topic, setTopic] = useState('MIXED')
   const [difficulty, setDifficulty] = useState('NORMAL')
   const [questions, setQuestions] = useState<string[]>([])
+  const [usedResume, setUsedResume] = useState<boolean | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [isJobSelectOpen, setIsJobSelectOpen] = useState(false)
@@ -52,15 +53,18 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
   const handleClose = () => {
     if (isLoading) return
     setQuestions([])
+    setUsedResume(undefined)
     setError('')
     onClose()
   }
 
   const handleStart = () => {
     const selected = jobs.find((j) => j.id === Number(selectedJobId))
+    setIsJobSelectOpen(false)
     setIsLoading(true)
     setError('')
     setQuestions([])
+    setUsedResume(undefined)
     getInterviewQuestions({
       companyName: selected?.companyName || undefined,
       position: selected?.position || undefined,
@@ -72,7 +76,10 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
       topic,
       difficulty,
     })
-      .then((res) => setQuestions(res.questions))
+      .then((res) => {
+        setQuestions(res.questions)
+        setUsedResume(res.usedResume)
+      })
       .catch((err) => setError(err instanceof Error ? err.message : '질문 생성 중 오류가 발생했습니다.'))
       .finally(() => setIsLoading(false))
   }
@@ -97,6 +104,7 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
               type="button"
               className="interview-job-select"
               onClick={() => setIsJobSelectOpen((v) => !v)}
+              disabled={isLoading}
             >
               <span>{selectedJob ? `${selectedJob.companyName} · ${selectedJob.position}` : '공고를 선택하세요 (선택)'}</span>
               <span className="interview-job-select-arrow">▼</span>
@@ -142,6 +150,7 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
                 type="button"
                 className={topic === t.value ? 'chip active' : 'chip'}
                 onClick={() => setTopic(t.value)}
+                disabled={isLoading}
               >
                 {t.label}
               </button>
@@ -158,6 +167,7 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
                 type="button"
                 className={difficulty === d.value ? 'chip active' : 'chip'}
                 onClick={() => setDifficulty(d.value)}
+                disabled={isLoading}
               >
                 {d.label}
               </button>
@@ -168,11 +178,21 @@ export default function InterviewSetupModal({ open, onClose, jobs, profileText, 
         {isLoading && <p>질문 생성 중...</p>}
         {error && <p className="error-message">{error}</p>}
         {questions.length > 0 && (
-          <ol className="interview-question-list">
-            {questions.map((q, i) => (
-              <li key={i}>{q}</li>
-            ))}
-          </ol>
+          <>
+            {usedResume === true && (
+              <p className="profile-hint">📄 저장된 이력서를 반영해 질문을 만들었어요</p>
+            )}
+            {usedResume === false && (
+              <p className="profile-hint profile-hint-empty">
+                ℹ️ 이력서/포트폴리오가 반영되지 않았어요 (공고와 관련이 없거나 이력서가 없음) — 공고 정보 중심으로 질문했어요
+              </p>
+            )}
+            <ol className="interview-question-list">
+              {questions.map((q, i) => (
+                <li key={i}>{q}</li>
+              ))}
+            </ol>
+          </>
         )}
 
         <div className="modal-actions">
