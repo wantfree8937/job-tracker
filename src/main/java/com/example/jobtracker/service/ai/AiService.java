@@ -35,10 +35,10 @@ public class AiService {
             "지원자의 기술 역량을 검증하는 기술 면접 질문 5개를 생성해라.";
     private static final String TECHNICAL_WITH_PROFILE_INSTRUCTION =
             "지원자의 이력서에 언급된 기술 스택 위주로, 일반적인 기술 질문도 섞어서 기술 면접 질문 5개를 생성해라.";
-    private static final String PORTFOLIO_INSTRUCTION =
-            "지원자의 프로젝트 경험을 검증하는 질문 5개를 생성해라 (구현 결정/트러블슈팅/협업 경험 위주, 특정 프로젝트를 가정하지 말고 일반적으로 질문해라).";
-    private static final String PORTFOLIO_WITH_PROFILE_INSTRUCTION =
-            "이 내용을 기반으로 프로젝트 경험/구현 결정/트러블슈팅을 검증하는 질문 5개를 생성해라.";
+    private static final String MOTIVE_INSTRUCTION =
+            "지원 동기, 회사·업종에 대한 관심과 이해도, 인성(커뮤니케이션/협업/성실성/스트레스 대처), 조직 적합도, 문제 해결 태도, 성장 목표 위주로 질문 5개를 생성해라 (기술 스택·구현 세부 질문은 지양해라).";
+    private static final String MOTIVE_WITH_PROFILE_INSTRUCTION =
+            "이 내용을 참고해서 지원 동기, 회사·업종에 대한 관심과 이해도, 인성(커뮤니케이션/협업/성실성/스트레스 대처), 조직 적합도, 문제 해결 태도, 성장 목표 위주로 질문 5개를 생성해라 (기술 스택·구현 세부 질문은 지양해라).";
     private static final String MIXED_INSTRUCTION =
             "기술 역량 질문과 프로젝트 경험 질문을 섞어서 5개 생성해라.";
     private static final String MIXED_WITH_PROFILE_INSTRUCTION =
@@ -152,7 +152,7 @@ public class AiService {
         } else {
             sb.append(switch (request.topic() == null ? "MIXED" : request.topic()) {
                 case "TECHNICAL" -> hasProfile ? TECHNICAL_WITH_PROFILE_INSTRUCTION : TECHNICAL_INSTRUCTION;
-                case "PORTFOLIO" -> hasProfile ? PORTFOLIO_WITH_PROFILE_INSTRUCTION : PORTFOLIO_INSTRUCTION;
+                case "MOTIVE" -> hasProfile ? MOTIVE_WITH_PROFILE_INSTRUCTION : MOTIVE_INSTRUCTION;
                 default -> hasProfile ? MIXED_WITH_PROFILE_INSTRUCTION : MIXED_INSTRUCTION;
             }).append("\n");
         }

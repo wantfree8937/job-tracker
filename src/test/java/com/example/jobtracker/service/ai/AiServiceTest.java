@@ -92,29 +92,29 @@ class AiServiceTest {
     @Test
     void profileText가_있으면_이력서_기반_지시문을_포함한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                null, null, null, null, null, null, "PORTFOLIO", null, null);
+                null, null, null, null, null, null, "MOTIVE", null, null);
 
         String prompt = AiService.buildSystemPrompt(request, "TRISENSE(반응 훈련 게임, Kotlin/Compose)");
 
         assertThat(prompt)
                 .contains("지원자의 이력서/포트폴리오: TRISENSE(반응 훈련 게임, Kotlin/Compose)")
-                .contains("이 내용을 기반으로");
+                .contains("이 내용을 참고해서");
     }
 
     @Test
     void profileText가_없으면_일반적인_개발자_면접_질문을_생성한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                null, null, null, null, null, null, "PORTFOLIO", null, null);
+                null, null, null, null, null, null, "MOTIVE", null, null);
 
         String prompt = AiService.buildSystemPrompt(request, "");
 
-        assertThat(prompt).doesNotContain("이력서/포트폴리오").contains("특정 프로젝트를 가정하지 말고");
+        assertThat(prompt).doesNotContain("이력서/포트폴리오").contains("기술 스택·구현 세부 질문은 지양");
     }
 
     @Test
     void profileText와_채용공고가_모두_있으면_무관시_이력서_무시_지시문을_포함한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
-                "토스", null, null, null, null, null, "PORTFOLIO", null, null);
+                "토스", null, null, null, null, null, "MOTIVE", null, null);
 
         String prompt = AiService.buildSystemPrompt(request, "TRISENSE(반응 훈련 게임, Kotlin/Compose)");
 
