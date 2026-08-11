@@ -5,6 +5,7 @@ import com.example.jobtracker.dto.ai.InterviewQuestionResponse;
 import com.example.jobtracker.service.ai.AiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,7 +20,8 @@ public class AiController {
 
     @PostMapping("/interview/questions")
     public ResponseEntity<InterviewQuestionResponse> generateInterviewQuestions(
+            Authentication authentication,
             @RequestBody InterviewQuestionRequest request) {
-        return ResponseEntity.ok(aiService.generateQuestions(request));
+        return ResponseEntity.ok(aiService.generateQuestions(authentication.getName(), request));
     }
 }

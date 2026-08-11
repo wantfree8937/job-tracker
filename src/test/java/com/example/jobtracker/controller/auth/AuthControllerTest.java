@@ -154,4 +154,38 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.keywords.length()").value(0));
     }
+
+    // ⑩ 이력서 저장 후 조회 시 반영 확인
+    @Test
+    void updateProfileTest() throws Exception {
+        signUp("profile@test.com");
+        String token = jwtUtil.generateToken("profile@test.com");
+
+        mockMvc.perform(put("/api/auth/me/profile")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"profileText":"3년차 백엔드 개발자입니다."}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profileText").value("3년차 백엔드 개발자입니다."));
+
+        mockMvc.perform(get("/api/auth/me/profile").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profileText").value("3년차 백엔드 개발자입니다."));
+    }
+
+    // ⑪ 5000자 초과 시 400
+    @Test
+    void updateProfileTooLongTest() throws Exception {
+        signUp("profile-long@test.com");
+        String token = jwtUtil.generateToken("profile-long@test.com");
+        String tooLong = "a".repeat(5001);
+
+        mockMvc.perform(put("/api/auth/me/profile")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("profileText", tooLong))))
+                .andExpect(status().isBadRequest());
+    }
 }

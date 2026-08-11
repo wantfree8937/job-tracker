@@ -34,4 +34,8 @@ public class User {
 
     // 관심 분야 키워드, 콤마 구분 문자열로 저장 (예: "안드로이드,백엔드")
     private String keywords;
+
+    // 이력서/포트폴리오 자유 형식 텍스트, AI 면접이 참고 (최대 5000자라 TEXT 타입 필요)
+    @Column(columnDefinition = "TEXT")
+    private String profileText;
 }

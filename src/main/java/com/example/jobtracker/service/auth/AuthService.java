@@ -2,6 +2,8 @@ package com.example.jobtracker.service.auth;
 
 import com.example.jobtracker.dto.auth.KeywordsRequest;
 import com.example.jobtracker.dto.auth.LoginRequest;
+import com.example.jobtracker.dto.auth.ProfileRequest;
+import com.example.jobtracker.dto.auth.ProfileResponse;
 import com.example.jobtracker.dto.auth.SignUpRequest;
 import com.example.jobtracker.dto.auth.TokenResponse;
 import com.example.jobtracker.dto.auth.UserResponse;
@@ -71,6 +73,23 @@ public class AuthService {
         List<String> normalized = normalizeKeywords(request.keywords());
         user.setKeywords(normalized.isEmpty() ? null : String.join(",", normalized));
         return toResponse(user);
+    }
+
+    // 이력서/포트폴리오 조회
+    @Transactional(readOnly = true)
+    public ProfileResponse getProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(InvalidCredentialsException::new);
+        return new ProfileResponse(user.getProfileText());
+    }
+
+    // 이력서/포트폴리오 저장
+    @Transactional
+    public ProfileResponse updateProfile(String email, ProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(InvalidCredentialsException::new);
+        user.setProfileText(request.profileText());
+        return new ProfileResponse(user.getProfileText());
     }
 
     private List<String> normalizeKeywords(List<String> keywords) {

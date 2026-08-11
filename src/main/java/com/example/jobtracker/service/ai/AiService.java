@@ -2,7 +2,10 @@ package com.example.jobtracker.service.ai;
 
 import com.example.jobtracker.dto.ai.InterviewQuestionRequest;
 import com.example.jobtracker.dto.ai.InterviewQuestionResponse;
+import com.example.jobtracker.entity.user.User;
 import com.example.jobtracker.exception.AiRequestFailedException;
+import com.example.jobtracker.exception.InvalidCredentialsException;
+import com.example.jobtracker.repository.user.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -16,26 +19,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-/** opencode-go API로 채용공고 정보 기반 예상 면접 질문을 생성한다 (API 키 노출 방지용 백엔드 프록시) */
+/** opencode-go API로 채용공고 정보(+ 사용자 이력서) 기반 예상 면접 질문을 생성한다 (API 키 노출 방지용 백엔드 프록시) */
 @Slf4j
 @Service
 public class AiService {
 
-    private static final String INTRO = """
-            너는 한국 IT 기업의 면접관이다. 지원자는 신입 안드로이드 개발자로,
-            Kotlin/Compose/Clean Architecture를 공부했고 포트폴리오는
-            TRISENSE(반응 훈련 게임, 1인 출시, MVI+Room+Hilt), 딱지금(최저가 추적, 4인 팀, FCM+Firestore+Koin),
-            머니로그(ML Kit OCR 가계부)가 있다.
-            """;
+    private static final String INTRO = "너는 한국 IT 기업의 면접관이다.\n";
 
     private static final String TECHNICAL_INSTRUCTION =
-            "지원자의 기술 역량을 검증하는 기술 면접 질문 5개를 생성해라 " +
-            "(Kotlin/Android/Compose/Clean Architecture/데이터베이스/네트워크 등 현직 개발자 수준).";
+            "지원자의 기술 역량을 검증하는 기술 면접 질문 5개를 생성해라 (개발 전반에 대한 현직 개발자 수준).";
+    private static final String TECHNICAL_WITH_PROFILE_INSTRUCTION =
+            "지원자의 이력서에 언급된 기술 스택 위주로, 일반적인 기술 질문도 섞어서 기술 면접 질문 5개를 생성해라.";
     private static final String PORTFOLIO_INSTRUCTION =
-            "지원자의 포트폴리오(TRISENSE, 딱지금, 머니로그)를 기반으로 프로젝트 경험을 검증하는 질문 5개를 생성해라 " +
-            "(구현 결정/트러블슈팅/협업 경험 위주).";
+            "지원자의 프로젝트 경험을 검증하는 질문 5개를 생성해라 (구현 결정/트러블슈팅/협업 경험 위주, 특정 프로젝트를 가정하지 말고 일반적으로 질문해라).";
+    private static final String PORTFOLIO_WITH_PROFILE_INSTRUCTION =
+            "이 내용을 기반으로 프로젝트 경험/구현 결정/트러블슈팅을 검증하는 질문 5개를 생성해라.";
     private static final String MIXED_INSTRUCTION =
-            "기술 역량 질문과 포트폴리오 프로젝트 경험 질문을 섞어서 5개 생성해라.";
+            "기술 역량 질문과 프로젝트 경험 질문을 섞어서 5개 생성해라.";
+    private static final String MIXED_WITH_PROFILE_INSTRUCTION =
+            "이력서 기반 프로젝트 경험 질문과 일반 기술 역량 질문을 섞어서 5개 생성해라.";
 
     private static final String EASY_INSTRUCTION = "난이도는 쉬움: 기초 개념이나 개인 경험을 묻는 쉬운 질문으로 구성해라.";
     private static final String NORMAL_INSTRUCTION = "난이도는 보통: 일반적인 수준의 질문으로 구성해라.";
@@ -46,14 +48,25 @@ public class AiService {
 
     private final String apiKey;
     private final RestClient restClient;
+    private final UserRepository userRepository;
 
     public AiService(@Value("${opencode-go.api-key}") String apiKey,
-                      @Value("${opencode-go.base-url}") String baseUrl) {
+                      @Value("${opencode-go.base-url}") String baseUrl,
+                      UserRepository userRepository) {
         this.apiKey = apiKey;
         this.restClient = RestClient.builder().baseUrl(baseUrl).build();
+        this.userRepository = userRepository;
     }
 
-    public InterviewQuestionResponse generateQuestions(InterviewQuestionRequest request) {
+    public InterviewQuestionResponse generateQuestions(String email, InterviewQuestionRequest request) {
+        if (apiKey.isBlank()) {
+            log.warn("opencode-go API 키가 설정되지 않음 (OPENCODE_GO_API_KEY 환경변수 확인 필요)");
+            throw new AiRequestFailedException();
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(InvalidCredentialsException::new);
+
         String responseBody;
         try {
             responseBody = restClient.post()
@@ -63,7 +76,7 @@ public class AiService {
                     .body(Map.of(
                             "model", "deepseek-v4-flash",
                             "messages", List.of(
-                                    Map.of("role", "system", "content", buildSystemPrompt(request)),
+                                    Map.of("role", "system", "content", buildSystemPrompt(request, user.getProfileText())),
                                     Map.of("role", "user", "content", buildUserMessage(request))
                             ),
                             "max_tokens", 4000
@@ -78,14 +91,19 @@ public class AiService {
         return new InterviewQuestionResponse(parseQuestions(responseBody));
     }
 
-    // topic/difficulty와 채용공고 정보 유무에 따라 시스템 프롬프트를 동적으로 구성한다
-    static String buildSystemPrompt(InterviewQuestionRequest request) {
+    // topic/difficulty와 채용공고 정보, 이력서(profileText) 유무에 따라 시스템 프롬프트를 동적으로 구성한다
+    static String buildSystemPrompt(InterviewQuestionRequest request, String profileText) {
+        boolean hasProfile = profileText != null && !profileText.isBlank();
+
         StringBuilder sb = new StringBuilder(INTRO);
+        if (hasProfile) {
+            sb.append("지원자의 이력서/포트폴리오: ").append(profileText).append("\n");
+        }
 
         sb.append(switch (request.topic() == null ? "MIXED" : request.topic()) {
-            case "TECHNICAL" -> TECHNICAL_INSTRUCTION;
-            case "PORTFOLIO" -> PORTFOLIO_INSTRUCTION;
-            default -> MIXED_INSTRUCTION;
+            case "TECHNICAL" -> hasProfile ? TECHNICAL_WITH_PROFILE_INSTRUCTION : TECHNICAL_INSTRUCTION;
+            case "PORTFOLIO" -> hasProfile ? PORTFOLIO_WITH_PROFILE_INSTRUCTION : PORTFOLIO_INSTRUCTION;
+            default -> hasProfile ? MIXED_WITH_PROFILE_INSTRUCTION : MIXED_INSTRUCTION;
         }).append("\n");
 
         sb.append(switch (request.difficulty() == null ? "NORMAL" : request.difficulty()) {

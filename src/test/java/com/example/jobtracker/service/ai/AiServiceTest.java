@@ -54,7 +54,7 @@ class AiServiceTest {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
                 null, null, null, null, null, null, "TECHNICAL", "HARD");
 
-        String prompt = AiService.buildSystemPrompt(request);
+        String prompt = AiService.buildSystemPrompt(request, null);
 
         assertThat(prompt).contains("기술 면접 질문 5개").contains("심화").contains("일반적인 면접");
     }
@@ -64,8 +64,30 @@ class AiServiceTest {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
                 "토스", null, null, null, null, null, null, null);
 
-        String prompt = AiService.buildSystemPrompt(request);
+        String prompt = AiService.buildSystemPrompt(request, null);
 
         assertThat(prompt).contains("섞어서").contains("보통").contains("채용공고 정보를 참고");
+    }
+
+    @Test
+    void profileText가_있으면_이력서_기반_지시문을_포함한다() {
+        InterviewQuestionRequest request = new InterviewQuestionRequest(
+                null, null, null, null, null, null, "PORTFOLIO", null);
+
+        String prompt = AiService.buildSystemPrompt(request, "TRISENSE(반응 훈련 게임, Kotlin/Compose)");
+
+        assertThat(prompt)
+                .contains("지원자의 이력서/포트폴리오: TRISENSE(반응 훈련 게임, Kotlin/Compose)")
+                .contains("이 내용을 기반으로");
+    }
+
+    @Test
+    void profileText가_없으면_일반적인_개발자_면접_질문을_생성한다() {
+        InterviewQuestionRequest request = new InterviewQuestionRequest(
+                null, null, null, null, null, null, "PORTFOLIO", null);
+
+        String prompt = AiService.buildSystemPrompt(request, "");
+
+        assertThat(prompt).doesNotContain("이력서/포트폴리오").contains("특정 프로젝트를 가정하지 말고");
     }
 }
