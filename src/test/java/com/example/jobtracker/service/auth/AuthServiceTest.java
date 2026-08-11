@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -91,6 +92,39 @@ class AuthServiceTest {
         AuthService authService = new AuthService(null, null, null);
 
         assertThatThrownBy(() -> authService.parseProfileUrl("https://example.com/resume"))
+                .isInstanceOf(ProfileParseFailedException.class);
+    }
+
+    @Test
+    void velog_주소에서_username을_추출한다() {
+        assertThat(AuthService.extractVelogUsername(URI.create("https://velog.io/@psy8937/posts")))
+                .isEqualTo("psy8937");
+        assertThat(AuthService.extractVelogUsername(URI.create("https://velog.io/@psy8937")))
+                .isEqualTo("psy8937");
+        assertThat(AuthService.extractVelogUsername(URI.create("https://velog.io/tags/java")))
+                .isNull();
+    }
+
+    @Test
+    void velog_API_응답에서_제목과_요약을_조합한다() {
+        String json = """
+                {"data":{"posts":[
+                    {"title":"글 제목 1","short_description":"요약 1"},
+                    {"title":"글 제목 2","short_description":"요약 2"}
+                ]}}
+                """;
+
+        String text = AuthService.buildVelogText(json);
+
+        assertThat(text).contains("글 제목 1").contains("요약 1")
+                .contains("글 제목 2").contains("요약 2");
+    }
+
+    @Test
+    void velog_글이_없으면_예외를_던진다() {
+        String json = "{\"data\":{\"posts\":[]}}";
+
+        assertThatThrownBy(() -> AuthService.buildVelogText(json))
                 .isInstanceOf(ProfileParseFailedException.class);
     }
 
