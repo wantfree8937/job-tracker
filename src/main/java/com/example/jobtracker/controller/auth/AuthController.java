@@ -2,21 +2,28 @@ package com.example.jobtracker.controller.auth;
 
 import com.example.jobtracker.dto.auth.KeywordsRequest;
 import com.example.jobtracker.dto.auth.LoginRequest;
+import com.example.jobtracker.dto.auth.ProfileFileResponse;
 import com.example.jobtracker.dto.auth.ProfileRequest;
 import com.example.jobtracker.dto.auth.ProfileResponse;
 import com.example.jobtracker.dto.auth.ProfileTextResponse;
 import com.example.jobtracker.dto.auth.ProfileUrlRequest;
+import com.example.jobtracker.dto.auth.ResumeFileData;
 import com.example.jobtracker.dto.auth.SignUpRequest;
 import com.example.jobtracker.dto.auth.TokenResponse;
 import com.example.jobtracker.dto.auth.UserResponse;
 import com.example.jobtracker.service.auth.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -65,5 +72,37 @@ public class AuthController {
     @PostMapping("/me/profile/parse-pdf")
     public ResponseEntity<ProfileTextResponse> parseProfilePdf(@RequestPart("file") MultipartFile file) {
         return ResponseEntity.ok(authService.parseProfilePdf(file));
+    }
+
+    @PutMapping("/me/profile/file")
+    public ResponseEntity<ProfileFileResponse> saveProfileFile(Authentication authentication,
+                                                                 @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(authService.saveProfileFile(authentication.getName(), file));
+    }
+
+    @GetMapping("/me/profile/file")
+    public ResponseEntity<byte[]> getProfileFile(Authentication authentication) {
+        ResumeFileData file = authService.getProfileFile(authentication.getName());
+        if (file == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(file.fileName(), StandardCharsets.UTF_8)
+                .build();
+        MediaType contentType = file.contentType() == null
+                ? MediaType.APPLICATION_OCTET_STREAM
+                : MediaType.parseMediaType(file.contentType());
+
+        return ResponseEntity.ok()
+                .contentType(contentType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(file.data());
+    }
+
+    @DeleteMapping("/me/profile/file")
+    public ResponseEntity<Void> deleteProfileFile(Authentication authentication) {
+        authService.deleteProfileFile(authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 }

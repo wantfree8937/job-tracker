@@ -3,10 +3,13 @@ package com.example.jobtracker.controller.auth;
 import com.example.jobtracker.dto.auth.LoginRequest;
 import com.example.jobtracker.dto.auth.SignUpRequest;
 import com.example.jobtracker.security.JwtUtil;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -39,6 +42,16 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signUpRequest(email))));
+    }
+
+    // PDFBox가 실제로 파싱 가능한 최소 PDF 바이트 생성
+    private byte[] minimalPdfBytes() throws Exception {
+        try (PDDocument document = new PDDocument();
+             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+            document.addPage(new PDPage());
+            document.save(out);
+            return out.toByteArray();
+        }
     }
 
     // ① 회원가입 성공
@@ -239,5 +252,64 @@ class AuthControllerTest {
 
         mockMvc.perform(multipart("/api/auth/me/profile/parse-pdf", file))
                 .andExpect(status().isUnauthorized());
+    }
+
+    // ⑮ 이력서 파일 저장 후 다운로드 시 원본 그대로 조회
+    @Test
+    void saveAndDownloadProfileFileTest() throws Exception {
+        signUp("profile-file@test.com");
+        String token = jwtUtil.generateToken("profile-file@test.com");
+        byte[] pdfBytes = minimalPdfBytes();
+        MockMultipartFile file = new MockMultipartFile("file", "이력서.pdf", "application/pdf", pdfBytes);
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(file)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fileName").value("이력서.pdf"));
+
+        mockMvc.perform(get("/api/auth/me/profile/file").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("Content-Disposition"))
+                .andExpect(content().bytes(pdfBytes));
+    }
+
+    // ⑯ 저장된 파일이 없으면 다운로드 시 404
+    @Test
+    void getProfileFileNotFoundTest() throws Exception {
+        signUp("profile-file-none@test.com");
+        String token = jwtUtil.generateToken("profile-file-none@test.com");
+
+        mockMvc.perform(get("/api/auth/me/profile/file").header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    // ⑰ 잘못된 확장자로 파일 저장 시 400
+    @Test
+    void saveProfileFileInvalidTypeTest() throws Exception {
+        signUp("profile-file-invalid@test.com");
+        String token = jwtUtil.generateToken("profile-file-invalid@test.com");
+        MockMultipartFile file = new MockMultipartFile("file", "resume.txt", "text/plain", "hello".getBytes());
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(file)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ⑱ 이력서 파일 삭제 후 다운로드 시 404
+    @Test
+    void deleteProfileFileTest() throws Exception {
+        signUp("profile-file-delete@test.com");
+        String token = jwtUtil.generateToken("profile-file-delete@test.com");
+        MockMultipartFile file = new MockMultipartFile("file", "resume.pdf", "application/pdf", minimalPdfBytes());
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(file)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/auth/me/profile/file").header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/auth/me/profile/file").header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
     }
 }

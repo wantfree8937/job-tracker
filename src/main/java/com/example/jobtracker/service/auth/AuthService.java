@@ -8,6 +8,8 @@ import com.example.jobtracker.dto.auth.SignUpRequest;
 import com.example.jobtracker.dto.auth.TokenResponse;
 import com.example.jobtracker.dto.auth.UserResponse;
 import com.example.jobtracker.dto.auth.ProfileTextResponse;
+import com.example.jobtracker.dto.auth.ProfileFileResponse;
+import com.example.jobtracker.dto.auth.ResumeFileData;
 import com.example.jobtracker.entity.user.User;
 import com.example.jobtracker.exception.EmailAlreadyExistsException;
 import com.example.jobtracker.exception.InvalidCredentialsException;
@@ -31,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -162,6 +165,50 @@ public class AuthService {
 
     // 이력서 파일(PDF/PPT/PPTX)에서 텍스트 추출 (최대 5000자)
     public ProfileTextResponse parseProfilePdf(MultipartFile file) {
+        return new ProfileTextResponse(extractResumeText(file));
+    }
+
+    // 이력서 원본 파일 저장 + 텍스트 추출 (다운로드용 원본은 DB에 그대로 보관)
+    @Transactional
+    public ProfileFileResponse saveProfileFile(String email, MultipartFile file) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(InvalidCredentialsException::new);
+
+        String text = extractResumeText(file);
+        try {
+            user.setResumeFile(file.getBytes());
+        } catch (IOException e) {
+            throw new ProfileParseFailedException("파일을 읽을 수 없습니다");
+        }
+        user.setResumeFileName(file.getOriginalFilename());
+        user.setResumeFileType(file.getContentType());
+
+        return new ProfileFileResponse(user.getResumeFileName(), text);
+    }
+
+    // 이력서 원본 파일 조회 (저장된 파일이 없으면 null)
+    @Transactional(readOnly = true)
+    public ResumeFileData getProfileFile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(InvalidCredentialsException::new);
+        if (user.getResumeFile() == null) {
+            return null;
+        }
+        return new ResumeFileData(user.getResumeFileName(), user.getResumeFileType(), user.getResumeFile());
+    }
+
+    // 이력서 원본 파일 삭제
+    @Transactional
+    public void deleteProfileFile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(InvalidCredentialsException::new);
+        user.setResumeFileName(null);
+        user.setResumeFileType(null);
+        user.setResumeFile(null);
+    }
+
+    // PDF/PPT/PPTX 검증 후 텍스트 추출 (최대 5000자), 파일 저장 API와 공용
+    private String extractResumeText(MultipartFile file) {
         if (file.isEmpty()) {
             throw new ProfileParseFailedException("PDF/PPT/PPTX 파일만 업로드할 수 있습니다");
         }
@@ -171,13 +218,13 @@ public class AuthService {
 
         try {
             if ("application/pdf".equals(contentType) || filename.endsWith(".pdf")) {
-                return new ProfileTextResponse(extractPdfText(file));
+                return extractPdfText(file);
             }
             if (PPTX_CONTENT_TYPE.equals(contentType) || filename.endsWith(".pptx")) {
-                return new ProfileTextResponse(extractPptxText(file));
+                return extractPptxText(file);
             }
             if (PPT_CONTENT_TYPE.equals(contentType) || filename.endsWith(".ppt")) {
-                return new ProfileTextResponse(extractPptText(file));
+                return extractPptText(file);
             }
         } catch (Exception e) {
             throw new ProfileParseFailedException("파일에서 텍스트를 추출할 수 없습니다");
