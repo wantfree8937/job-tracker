@@ -21,6 +21,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
   const [message, setMessage] = useState('')
   const [url, setUrl] = useState('')
   const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -108,7 +109,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
           <div className="link-input-row">
             <input
               type="url"
-              placeholder="https://..."
+              placeholder="노션 · GitHub · 벨로그 주소만 지원됩니다 (예: https://www.notion.so/...)"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
@@ -119,15 +120,36 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
         )}
 
         {tab === 'pdf' && (
-          <div className="link-input-row">
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
-            />
-            <button type="button" className="outline-button" onClick={handleParsePdf} disabled={isParsing || !pdfFile}>
-              {isParsing ? '변환 중...' : '변환'}
-            </button>
+          <div>
+            <label
+              className={isDragging ? 'drop-zone dragging' : 'drop-zone'}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setIsDragging(true)
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault()
+                setIsDragging(false)
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                setIsDragging(false)
+                setPdfFile(e.dataTransfer.files?.[0] ?? null)
+              }}
+            >
+              <input
+                type="file"
+                accept=".pdf,.ppt,.pptx"
+                onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
+              />
+              <span className="drop-zone-title">{pdfFile ? pdfFile.name : '클릭하거나 파일을 끌어다 놓으세요'}</span>
+              <span className="drop-zone-hint">PDF · PPT · PPTX (최대 10MB)</span>
+            </label>
+            <div className="modal-actions">
+              <button type="button" className="outline-button" onClick={handleParsePdf} disabled={isParsing || !pdfFile}>
+                {isParsing ? '변환 중...' : '변환'}
+              </button>
+            </div>
           </div>
         )}
 
