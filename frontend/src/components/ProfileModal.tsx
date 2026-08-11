@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getProfile, saveProfile, parseProfileUrl, getProfileFile, saveProfileFile, deleteProfileFile } from '../api'
+import { getProfile, saveProfile, getProfileFile, saveProfileFile, deleteProfileFile } from '../api'
 import type { ProfileFileResponse } from '../api'
 
 interface ProfileModalProps {
@@ -9,7 +9,7 @@ interface ProfileModalProps {
 
 const MAX_LENGTH = 5000
 
-type ProfileTab = 'text' | 'url' | 'pdf'
+type ProfileTab = 'text' | 'pdf'
 
 // 이력서/포트폴리오 저장 모달 (AI 면접이 참고)
 export default function ProfileModal({ open, onClose }: ProfileModalProps) {
@@ -20,7 +20,6 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
   const [isParsing, setIsParsing] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const [url, setUrl] = useState('')
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [savedFile, setSavedFile] = useState<ProfileFileResponse | null>(null)
@@ -30,7 +29,6 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     setTab('text')
     setError('')
     setMessage('')
-    setUrl('')
     setPdfFile(null)
     setIsLoading(true)
     Promise.all([getProfile(), getProfileFile()])
@@ -57,22 +55,6 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
       setError(err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.')
     } finally {
       setIsSaving(false)
-    }
-  }
-
-  const handleParseUrl = async () => {
-    if (!url.trim()) return
-    setError('')
-    setMessage('')
-    setIsParsing(true)
-    try {
-      const res = await parseProfileUrl(url.trim())
-      setProfileText(res.text)
-      setTab('text')
-    } catch {
-      setError('페이지를 읽을 수 없어요 (지원되지 않는 사이트/네트워크)')
-    } finally {
-      setIsParsing(false)
     }
   }
 
@@ -135,27 +117,10 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
           <button type="button" className={tab === 'text' ? 'tab active' : 'tab'} onClick={() => setTab('text')}>
             직접 입력
           </button>
-          <button type="button" className={tab === 'url' ? 'tab active' : 'tab'} onClick={() => setTab('url')}>
-            URL 가져오기
-          </button>
           <button type="button" className={tab === 'pdf' ? 'tab active' : 'tab'} onClick={() => setTab('pdf')}>
             파일 업로드
           </button>
         </div>
-
-        {tab === 'url' && (
-          <div className="link-input-row">
-            <input
-              type="url"
-              placeholder="노션 · GitHub · 벨로그 주소만 지원됩니다 (예: https://www.notion.so/...)"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
-            <button type="button" className="outline-button" onClick={handleParseUrl} disabled={isParsing || !url.trim()}>
-              {isParsing ? '가져오는 중...' : '가져오기'}
-            </button>
-          </div>
-        )}
 
         {tab === 'pdf' && (
           <div>

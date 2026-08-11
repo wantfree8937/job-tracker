@@ -169,14 +169,6 @@ export function saveProfile(profileText: string): Promise<ProfileResponse> {
   return request('/auth/me/profile', { method: 'PUT', body: JSON.stringify({ profileText }) })
 }
 
-export interface ProfileParseResult {
-  text: string
-}
-
-export function parseProfileUrl(url: string): Promise<ProfileParseResult> {
-  return request('/auth/me/profile/parse-url', { method: 'POST', body: JSON.stringify({ url }) })
-}
-
 export interface ProfileFileResponse {
   fileName: string | null
   fileType: string | null
