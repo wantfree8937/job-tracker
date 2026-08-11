@@ -3,6 +3,11 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:job_tracker}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: 5        # Render 무료 Postgres 커넥션 부담 완화 (기본 10 → 5)
+      minimum-idle: 1
+      connection-timeout: 3000    # 3초 내 커넥션 못 얻으면 즉시 실패(빠른 폴백) — 행 대기 500 방지
+      max-lifetime: 1800000
   jpa:
     hibernate:
       ddl-auto: update
