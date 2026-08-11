@@ -290,7 +290,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               createPortal(<div className="toast toast-error">{error}</div>, document.body)}
 
             <section className="job-list">
-              {isLoading ? (
+              {isLoading && jobs.length === 0 ? (
                 <div className="job-list-loading">공고를 불러오는 중...</div>
               ) : jobs.length === 0 ? (
                 <p className="empty-message">아직 등록한 공고가 없어요 — [+ 공고 추가] 버튼으로 시작해보세요</p>
@@ -405,7 +405,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               createPortal(<div className="toast toast-success">{collectedMessage}</div>, document.body)}
 
             <section className="job-list">
-              {isCollectedLoading ? (
+              {isCollectedLoading && collectedJobs.length === 0 ? (
                 <div className="job-list-loading">공고를 불러오는 중...</div>
               ) : collectedJobs.length === 0 ? (
                 <p className="empty-message">아직 불러온 공고가 없어요 — [공고 불러오기]를 눌러 크롤링해보세요</p>

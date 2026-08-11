@@ -62,17 +62,20 @@
   margin: 0 0 12px;
 }
 
-.empty-message {
+.empty-message,
+.job-list-loading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
   color: var(--text);
   text-align: center;
   padding: 40px;
 }
 
 .job-list-loading {
-  color: var(--text);
   opacity: 0.6;
-  text-align: center;
-  padding: 40px;
 }
 
 .success-message {
@@ -662,6 +665,12 @@
 }
 .interview-job-select:hover {
   border-color: var(--accent);
+}
+.interview-job-select > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .interview-job-select-arrow {
