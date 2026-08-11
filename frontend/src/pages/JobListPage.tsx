@@ -43,6 +43,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [error, setError] = useState('')
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [visibleJobsCount, setVisibleJobsCount] = useState(30)
 
   const [collectedJobs, setCollectedJobs] = useState<CollectedJob[]>([])
   const [isCollectedLoading, setIsCollectedLoading] = useState(false)
@@ -53,6 +54,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [scrapedIds, setScrapedIds] = useState<Set<number>>(new Set())
   const [collectedError, setCollectedError] = useState('')
   const [collectedMessage, setCollectedMessage] = useState('')
+  const [visibleCollectedCount, setVisibleCollectedCount] = useState(30)
 
   const [keywords, setKeywords] = useState<string[]>([])
   const [isKeywordsModalOpen, setIsKeywordsModalOpen] = useState(false)
@@ -114,6 +116,10 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   useEffect(() => {
     loadJobs()
   }, [loadJobs])
+
+  useEffect(() => {
+    setVisibleJobsCount(30)
+  }, [jobs])
 
   useEffect(() => {
     getStats()
@@ -193,6 +199,10 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   useEffect(() => {
     if (tab === 'collected') loadCollected()
   }, [tab, loadCollected])
+
+  useEffect(() => {
+    setVisibleCollectedCount(30)
+  }, [collectedJobs])
 
   const handleLoadCollected = async () => {
     setCollectedError('')
@@ -311,7 +321,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               ) : jobs.length === 0 ? (
                 <p className="empty-message">아직 등록한 공고가 없어요 — [+ 공고 추가] 버튼으로 시작해보세요</p>
               ) : null}
-              {jobs.map((job) => (
+              {jobs.slice(0, visibleJobsCount).map((job) => (
                 <article key={job.id} className="job-card">
                   <div className="job-card-header">
                     <h3 title={job.companyName}>{job.companyName}</h3>
@@ -347,6 +357,15 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                   </div>
                 </article>
               ))}
+              {visibleJobsCount < jobs.length && (
+                <button
+                  type="button"
+                  className="load-more-button"
+                  onClick={() => setVisibleJobsCount((c) => c + 30)}
+                >
+                  더보기 ({visibleJobsCount} / {jobs.length})
+                </button>
+              )}
             </section>
           </>
         )}
@@ -426,7 +445,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
               ) : collectedJobs.length === 0 ? (
                 <p className="empty-message">아직 불러온 공고가 없어요 — [공고 불러오기]를 눌러 크롤링해보세요</p>
               ) : null}
-              {collectedJobs.map((job) => {
+              {collectedJobs.slice(0, visibleCollectedCount).map((job) => {
                 const scraped = scrapedIds.has(job.id)
                 return (
                   <article key={job.id} className={scraped ? 'job-card job-card-scraped' : 'job-card'}>
@@ -458,6 +477,15 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                   </article>
                 )
               })}
+              {visibleCollectedCount < collectedJobs.length && (
+                <button
+                  type="button"
+                  className="load-more-button"
+                  onClick={() => setVisibleCollectedCount((c) => c + 30)}
+                >
+                  더보기 ({visibleCollectedCount} / {collectedJobs.length})
+                </button>
+              )}
             </section>
           </>
         )}
