@@ -83,10 +83,9 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     setIsParsing(true)
     try {
       const res = await saveProfileFile(pdfFile)
-      setProfileText(res.text ?? '')
       setSavedFile(res)
       setPdfFile(null)
-      setTab('text')
+      setMessage('파일이 저장되었어요')
     } catch (err) {
       setError(err instanceof Error ? err.message : '파일을 저장할 수 없어요.')
     } finally {
@@ -98,7 +97,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     setError('')
     try {
       const token = localStorage.getItem('accessToken')
-      const res = await fetch('/api/auth/me/profile/file', {
+      const res = await fetch('/api/auth/me/profile/file/download', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       })
       if (!res.ok) throw new Error('파일을 다운로드할 수 없어요.')
@@ -140,7 +139,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
             URL 가져오기
           </button>
           <button type="button" className={tab === 'pdf' ? 'tab active' : 'tab'} onClick={() => setTab('pdf')}>
-            PDF 업로드
+            파일 업로드
           </button>
         </div>
 
