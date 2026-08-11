@@ -36,7 +36,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     Promise.all([getProfile(), getProfileFile()])
       .then(([profile, file]) => {
         setProfileText(profile.profileText ?? '')
-        setSavedFile(file.fileName ? file : null)
+        setSavedFile(file?.fileName ? file : null)
       })
       .catch((err) => setError(err instanceof Error ? err.message : '이력서를 불러오지 못했습니다.'))
       .finally(() => setIsLoading(false))
