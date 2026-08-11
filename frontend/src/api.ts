@@ -9,8 +9,9 @@ interface ApiErrorBody {
 // 공통 fetch 래퍼: 토큰 첨부, 401 처리, 에러 메시지 파싱
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('accessToken')
+  // FormData는 Content-Type을 지정하면 안 됨 (브라우저가 boundary 포함해 자동 설정)
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string> | undefined),
   }
   if (token) {
@@ -166,4 +167,18 @@ export function getProfile(): Promise<ProfileResponse> {
 
 export function saveProfile(profileText: string): Promise<ProfileResponse> {
   return request('/auth/me/profile', { method: 'PUT', body: JSON.stringify({ profileText }) })
+}
+
+export interface ProfileParseResult {
+  text: string
+}
+
+export function parseProfileUrl(url: string): Promise<ProfileParseResult> {
+  return request('/auth/me/profile/parse-url', { method: 'POST', body: JSON.stringify({ url }) })
+}
+
+export function parseProfilePdf(file: File): Promise<ProfileParseResult> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request('/auth/me/profile/parse-pdf', { method: 'POST', body: formData })
 }
