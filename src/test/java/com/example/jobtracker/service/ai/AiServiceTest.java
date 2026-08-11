@@ -60,6 +60,16 @@ class AiServiceTest {
     }
 
     @Test
+    void difficulty가_ENTRY이면_신입_지시문을_포함한다() {
+        InterviewQuestionRequest request = new InterviewQuestionRequest(
+                null, null, null, null, null, null, null, "ENTRY");
+
+        String prompt = AiService.buildSystemPrompt(request, null);
+
+        assertThat(prompt).contains("난이도는 신입").contains("압박 질문").contains("성장 가능성");
+    }
+
+    @Test
     void topic과_difficulty가_없으면_MIXED와_NORMAL로_처리한다() {
         InterviewQuestionRequest request = new InterviewQuestionRequest(
                 "토스", null, null, null, null, null, null, null);

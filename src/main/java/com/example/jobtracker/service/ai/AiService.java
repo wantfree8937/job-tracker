@@ -40,6 +40,8 @@ public class AiService {
     private static final String MIXED_WITH_PROFILE_INSTRUCTION =
             "이력서 기반 프로젝트 경험 질문과 일반 기술 역량 질문을 섞어서 5개 생성해라.";
 
+    private static final String ENTRY_INSTRUCTION =
+            "난이도는 신입: 기술 질문은 지원자가 사용한 기술의 기본 개념 수준으로만 묻고, 프로젝트 경험(무엇을 했는지, 왜 그렇게 했는지, 어떤 어려움을 겪었고 어떻게 해결했는지)과 협업 경험, 성향, 문제 해결 태도, 성장 가능성 위주로 질문해라. 압박 질문이나 시니어급 질문은 금지한다.";
     private static final String EASY_INSTRUCTION = "난이도는 쉬움: 기초 개념이나 개인 경험을 묻는 쉬운 질문으로 구성해라.";
     private static final String NORMAL_INSTRUCTION =
             "난이도는 보통: 신입이 답할 수 있는 실무 기반 질문으로 구성해라 (프로젝트 경험, 기본 개념, 기술 스택 활용 위주).";
@@ -128,6 +130,7 @@ public class AiService {
         }).append("\n");
 
         sb.append(switch (request.difficulty() == null ? "NORMAL" : request.difficulty()) {
+            case "ENTRY" -> ENTRY_INSTRUCTION;
             case "EASY" -> EASY_INSTRUCTION;
             case "HARD" -> HARD_INSTRUCTION;
             default -> NORMAL_INSTRUCTION;
