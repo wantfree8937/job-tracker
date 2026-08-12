@@ -10,10 +10,13 @@ import com.example.jobtracker.dto.auth.UserResponse;
 import com.example.jobtracker.dto.auth.ProfileTextResponse;
 import com.example.jobtracker.dto.auth.ProfileFileResponse;
 import com.example.jobtracker.dto.auth.ResumeFileData;
+import com.example.jobtracker.entity.user.ResumeFile;
 import com.example.jobtracker.entity.user.User;
 import com.example.jobtracker.exception.EmailAlreadyExistsException;
 import com.example.jobtracker.exception.InvalidCredentialsException;
 import com.example.jobtracker.exception.ProfileParseFailedException;
+import com.example.jobtracker.exception.ResumeFileNotFoundException;
+import com.example.jobtracker.repository.user.ResumeFileRepository;
 import com.example.jobtracker.repository.user.UserRepository;
 import com.example.jobtracker.security.JwtUtil;
 import com.example.jobtracker.util.ResumeTextExtractor;
@@ -31,9 +34,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final int MAX_RESUME_FILES = 3;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final ResumeFileRepository resumeFileRepository;
 
     // 회원가입: 이메일 중복 확인 후 비밀번호를 암호화해 저장
     @Transactional
@@ -104,54 +110,60 @@ public class AuthService {
         return new ProfileTextResponse(ResumeTextExtractor.extractResumeText(file));
     }
 
-    // 이력서 원본 파일 저장 + 텍스트 추출 (다운로드용 원본은 DB에 그대로 보관)
+    // 이력서 원본 파일 추가 저장 + 텍스트 추출 (최대 3개, 다운로드용 원본은 DB에 그대로 보관)
     @Transactional
-    public ProfileFileResponse saveProfileFile(String email, MultipartFile file) {
+    public ProfileFileResponse uploadProfileFile(String email, MultipartFile file) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(InvalidCredentialsException::new);
+        if (resumeFileRepository.countByUserId(user.getId()) >= MAX_RESUME_FILES) {
+            throw new ProfileParseFailedException("이력서 파일은 최대 3개까지 저장할 수 있습니다");
+        }
 
         String text = ResumeTextExtractor.extractResumeText(file);
+
+        ResumeFile resumeFile = new ResumeFile();
+        resumeFile.setUser(user);
+        resumeFile.setFileName(file.getOriginalFilename());
+        resumeFile.setFileType(file.getContentType());
         try {
-            user.setResumeFile(file.getBytes());
+            resumeFile.setContent(file.getBytes());
         } catch (IOException e) {
             throw new ProfileParseFailedException("파일을 읽을 수 없습니다");
         }
-        user.setResumeFileName(file.getOriginalFilename());
-        user.setResumeFileType(file.getContentType());
+        resumeFileRepository.save(resumeFile);
 
-        return new ProfileFileResponse(user.getResumeFileName(), user.getResumeFileType(), text);
+        return new ProfileFileResponse(resumeFile.getId(), resumeFile.getFileName(), resumeFile.getFileType(), text);
     }
 
-    // 이력서 원본 파일 메타 조회 (저장된 파일이 없으면 null)
+    // 이력서 원본 파일 목록 조회 (id + 파일명 + 타입만, 파일 내용은 제외)
     @Transactional(readOnly = true)
-    public ProfileFileResponse getProfileFile(String email) {
+    public List<ProfileFileResponse> getProfileFiles(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(InvalidCredentialsException::new);
-        if (user.getResumeFile() == null) {
-            return null;
-        }
-        return new ProfileFileResponse(user.getResumeFileName(), user.getResumeFileType(), null);
+        return resumeFileRepository.findByUserIdOrderByCreatedAtAsc(user.getId()).stream()
+                .map(f -> new ProfileFileResponse(f.getId(), f.getFileName(), f.getFileType(), null))
+                .toList();
     }
 
-    // 이력서 원본 파일 다운로드 (저장된 파일이 없으면 null)
+    // 이력서 원본 파일 다운로드 (없거나 내 소유가 아니면 예외)
     @Transactional(readOnly = true)
-    public ResumeFileData downloadProfileFile(String email) {
+    public ResumeFileData downloadProfileFile(String email, Long fileId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(InvalidCredentialsException::new);
-        if (user.getResumeFile() == null) {
-            return null;
-        }
-        return new ResumeFileData(user.getResumeFileName(), user.getResumeFileType(), user.getResumeFile());
+        ResumeFile file = resumeFileRepository.findByIdAndUserId(fileId, user.getId())
+                .orElseThrow(ResumeFileNotFoundException::new);
+        return new ResumeFileData(file.getFileName(), file.getFileType(), file.getContent());
     }
 
-    // 이력서 원본 파일 삭제
+    // 이력서 원본 파일 개별 삭제 (없거나 내 소유가 아니면 예외)
     @Transactional
-    public void deleteProfileFile(String email) {
+    public void deleteProfileFile(String email, Long fileId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(InvalidCredentialsException::new);
-        user.setResumeFileName(null);
-        user.setResumeFileType(null);
-        user.setResumeFile(null);
+        long deleted = resumeFileRepository.deleteByIdAndUserId(fileId, user.getId());
+        if (deleted == 0) {
+            throw new ResumeFileNotFoundException();
+        }
     }
 
     private List<String> normalizeKeywords(List<String> keywords) {

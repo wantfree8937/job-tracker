@@ -2,9 +2,11 @@ package com.example.jobtracker.service.ai;
 
 import com.example.jobtracker.dto.ai.InterviewQuestionRequest;
 import com.example.jobtracker.dto.ai.InterviewQuestionResponse;
+import com.example.jobtracker.entity.user.ResumeFile;
 import com.example.jobtracker.entity.user.User;
 import com.example.jobtracker.exception.AiRequestFailedException;
 import com.example.jobtracker.exception.InvalidCredentialsException;
+import com.example.jobtracker.repository.user.ResumeFileRepository;
 import com.example.jobtracker.repository.user.UserRepository;
 import com.example.jobtracker.util.ResumeTextExtractor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,16 +71,21 @@ public class AiService {
     private static final Pattern WANTED_URL_ID = Pattern.compile("wanted\\.co\\.kr/wd/(\\d+)");
     private static final Pattern JOBKOREA_URL_ID = Pattern.compile("jobkorea\\.co\\.kr/Recruit/GI_Read/(\\d+)");
 
+    private static final int PER_FILE_TEXT_MAX_LENGTH = 3000;
+
     private final String apiKey;
     private final RestClient restClient;
     private final UserRepository userRepository;
+    private final ResumeFileRepository resumeFileRepository;
 
     public AiService(@Value("${opencode-go.api-key}") String apiKey,
                       @Value("${opencode-go.base-url}") String baseUrl,
-                      UserRepository userRepository) {
+                      UserRepository userRepository,
+                      ResumeFileRepository resumeFileRepository) {
         this.apiKey = apiKey;
         this.restClient = RestClient.builder().baseUrl(baseUrl).build();
         this.userRepository = userRepository;
+        this.resumeFileRepository = resumeFileRepository;
     }
 
     public InterviewQuestionResponse generateQuestions(String email, InterviewQuestionRequest request) {
@@ -118,22 +125,34 @@ public class AiService {
         return parseQuestions(responseBody, hasProfile);
     }
 
-    // profileText가 비어있으면 업로드된 이력서 원본 파일에서 텍스트를 추출해 대신 사용한다
+    // profileText가 비어있으면 업로드된 이력서 원본 파일 전부(최대 3개)에서 텍스트를 추출해 대신 사용한다
     private String resolveProfileText(User user) {
         String profileText = user.getProfileText();
         if (profileText != null && !profileText.isBlank()) {
             return profileText;
         }
-        if (user.getResumeFile() == null) {
-            return null;
+        List<ResumeFile> files = resumeFileRepository.findByUserIdOrderByCreatedAtAsc(user.getId());
+        String combined = buildProfileTextFromFiles(files);
+        return combined.isBlank() ? null : combined;
+    }
+
+    // 이력서 파일 목록에서 텍스트를 추출해 합친다 (각 파일 3000자 제한, 추출 실패 파일은 건너뜀)
+    static String buildProfileTextFromFiles(List<ResumeFile> files) {
+        StringBuilder sb = new StringBuilder();
+        for (ResumeFile file : files) {
+            try {
+                String text = ResumeTextExtractor.extractResumeText(
+                        file.getContent(), file.getFileType(), file.getFileName());
+                if (text != null && !text.isBlank()) {
+                    String truncated = text.length() > PER_FILE_TEXT_MAX_LENGTH
+                            ? text.substring(0, PER_FILE_TEXT_MAX_LENGTH) : text;
+                    sb.append(truncated).append("\n\n");
+                }
+            } catch (Exception e) {
+                log.warn("이력서 파일 텍스트 추출 실패 ({}): {}", file.getFileName(), e.getMessage());
+            }
         }
-        try {
-            return ResumeTextExtractor.extractResumeText(
-                    user.getResumeFile(), user.getResumeFileType(), user.getResumeFileName());
-        } catch (Exception e) {
-            log.warn("이력서 파일 텍스트 추출 실패: {}", e.getMessage());
-            return null;
-        }
+        return sb.toString().trim();
     }
 
     // topic/difficulty와 채용공고 정보, 이력서(profileText) 유무에 따라 시스템 프롬프트를 동적으로 구성한다

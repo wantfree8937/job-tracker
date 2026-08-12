@@ -3,8 +3,6 @@ package com.example.jobtracker.entity.user;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -40,13 +38,4 @@ public class User {
     // 이력서/포트폴리오 자유 형식 텍스트, AI 면접이 참고 (최대 5000자라 TEXT 타입 필요)
     @Column(columnDefinition = "TEXT")
     private String profileText;
-
-    // 이력서 원본 파일 (다운로드/재확인용, 최대 10MB)
-    @Column(columnDefinition = "TEXT")
-    private String resumeFileName;
-    @Column(columnDefinition = "TEXT")
-    private String resumeFileType;
-    @JdbcTypeCode(SqlTypes.VARBINARY)
-    @Column(columnDefinition = "bytea")
-    private byte[] resumeFile;
 }

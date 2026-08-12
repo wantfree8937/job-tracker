@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -69,26 +70,19 @@ public class AuthController {
     }
 
     @PutMapping("/me/profile/file")
-    public ResponseEntity<ProfileFileResponse> saveProfileFile(Authentication authentication,
-                                                                 @RequestPart("file") MultipartFile file) {
-        return ResponseEntity.ok(authService.saveProfileFile(authentication.getName(), file));
+    public ResponseEntity<ProfileFileResponse> uploadProfileFile(Authentication authentication,
+                                                                    @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(authService.uploadProfileFile(authentication.getName(), file));
     }
 
-    @GetMapping("/me/profile/file")
-    public ResponseEntity<ProfileFileResponse> getProfileFile(Authentication authentication) {
-        ProfileFileResponse meta = authService.getProfileFile(authentication.getName());
-        if (meta == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(meta);
+    @GetMapping("/me/profile/files")
+    public ResponseEntity<List<ProfileFileResponse>> getProfileFiles(Authentication authentication) {
+        return ResponseEntity.ok(authService.getProfileFiles(authentication.getName()));
     }
 
-    @GetMapping("/me/profile/file/download")
-    public ResponseEntity<byte[]> downloadProfileFile(Authentication authentication) {
-        ResumeFileData file = authService.downloadProfileFile(authentication.getName());
-        if (file == null) {
-            return ResponseEntity.notFound().build();
-        }
+    @GetMapping("/me/profile/file/{fileId}/download")
+    public ResponseEntity<byte[]> downloadProfileFile(Authentication authentication, @PathVariable Long fileId) {
+        ResumeFileData file = authService.downloadProfileFile(authentication.getName(), fileId);
 
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename(file.fileName(), StandardCharsets.UTF_8)
@@ -103,9 +97,9 @@ public class AuthController {
                 .body(file.data());
     }
 
-    @DeleteMapping("/me/profile/file")
-    public ResponseEntity<Void> deleteProfileFile(Authentication authentication) {
-        authService.deleteProfileFile(authentication.getName());
+    @DeleteMapping("/me/profile/file/{fileId}")
+    public ResponseEntity<Void> deleteProfileFile(Authentication authentication, @PathVariable Long fileId) {
+        authService.deleteProfileFile(authentication.getName(), fileId);
         return ResponseEntity.noContent().build();
     }
 }

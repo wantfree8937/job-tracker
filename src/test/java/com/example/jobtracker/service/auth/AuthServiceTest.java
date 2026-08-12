@@ -24,7 +24,7 @@ class AuthServiceTest {
 
     @Test
     void PDF_파일에서_텍스트를_추출한다() throws Exception {
-        AuthService authService = new AuthService(null, null, null);
+        AuthService authService = new AuthService(null, null, null, null);
         byte[] pdfBytes = createPdfWithText("Backend Developer Resume");
         MockMultipartFile file = new MockMultipartFile("file", "resume.pdf", "application/pdf", pdfBytes);
 
@@ -35,7 +35,7 @@ class AuthServiceTest {
 
     @Test
     void PDF가_아닌_파일은_예외를_던진다() {
-        AuthService authService = new AuthService(null, null, null);
+        AuthService authService = new AuthService(null, null, null, null);
         MockMultipartFile file = new MockMultipartFile("file", "resume.txt", "text/plain", "hello".getBytes());
 
         assertThatThrownBy(() -> authService.parseProfilePdf(file))
@@ -44,7 +44,7 @@ class AuthServiceTest {
 
     @Test
     void PPTX_파일에서_텍스트를_추출한다() throws Exception {
-        AuthService authService = new AuthService(null, null, null);
+        AuthService authService = new AuthService(null, null, null, null);
         byte[] pptxBytes = createPptxWithText("Backend Developer Resume");
         MockMultipartFile file = new MockMultipartFile("file", "resume.pptx",
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation", pptxBytes);
@@ -56,7 +56,7 @@ class AuthServiceTest {
 
     @Test
     void PPT_파일에서_텍스트를_추출한다() throws Exception {
-        AuthService authService = new AuthService(null, null, null);
+        AuthService authService = new AuthService(null, null, null, null);
         byte[] pptBytes = createPptWithText("Backend Developer Resume");
         MockMultipartFile file = new MockMultipartFile("file", "resume.ppt",
                 "application/vnd.ms-powerpoint", pptBytes);

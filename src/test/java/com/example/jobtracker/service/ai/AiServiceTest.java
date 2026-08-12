@@ -2,8 +2,16 @@ package com.example.jobtracker.service.ai;
 
 import com.example.jobtracker.dto.ai.InterviewQuestionRequest;
 import com.example.jobtracker.dto.ai.InterviewQuestionResponse;
+import com.example.jobtracker.entity.user.ResumeFile;
 import com.example.jobtracker.exception.AiRequestFailedException;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -131,5 +139,50 @@ class AiServiceTest {
         assertThat(prompt)
                 .doesNotContain("이력서/포트폴리오")
                 .contains("지원 동기", "회사/업종 이해도", "포지션 요구사항");
+    }
+
+    @Test
+    void 이력서_파일_여러_개의_텍스트를_합쳐서_반환한다() throws Exception {
+        ResumeFile file1 = resumeFileOf("이력서1.pdf", "application/pdf", pdfBytes("Backend Developer"));
+        ResumeFile file2 = resumeFileOf("이력서2.pdf", "application/pdf", pdfBytes("Android Developer"));
+
+        String combined = AiService.buildProfileTextFromFiles(List.of(file1, file2));
+
+        assertThat(combined).contains("Backend Developer").contains("Android Developer");
+    }
+
+    @Test
+    void 텍스트_추출에_실패한_파일은_건너뛰고_나머지를_반환한다() throws Exception {
+        ResumeFile broken = resumeFileOf("resume.txt", "text/plain", "hello".getBytes());
+        ResumeFile ok = resumeFileOf("이력서.pdf", "application/pdf", pdfBytes("Backend Developer"));
+
+        String combined = AiService.buildProfileTextFromFiles(List.of(broken, ok));
+
+        assertThat(combined).contains("Backend Developer").doesNotContain("hello");
+    }
+
+    private ResumeFile resumeFileOf(String fileName, String fileType, byte[] content) {
+        ResumeFile file = new ResumeFile();
+        file.setFileName(fileName);
+        file.setFileType(fileType);
+        file.setContent(content);
+        return file;
+    }
+
+    private byte[] pdfBytes(String text) throws Exception {
+        try (PDDocument document = new PDDocument()) {
+            PDPage page = new PDPage();
+            document.addPage(page);
+            try (PDPageContentStream stream = new PDPageContentStream(document, page)) {
+                stream.beginText();
+                stream.setFont(PDType1Font.HELVETICA, 12);
+                stream.newLineAtOffset(50, 700);
+                stream.showText(text);
+                stream.endText();
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.save(out);
+            return out.toByteArray();
+        }
     }
 }

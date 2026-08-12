@@ -224,9 +224,9 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ⑮ 이력서 파일 저장 후 메타 조회 시 파일명/타입 반영 확인
+    // ⑮ 이력서 파일 저장 후 목록 조회 시 파일명/타입 반영 확인
     @Test
-    void saveAndGetProfileFileMetaTest() throws Exception {
+    void saveAndGetProfileFilesTest() throws Exception {
         signUp("profile-file@test.com");
         String token = jwtUtil.generateToken("profile-file@test.com");
         MockMultipartFile file = new MockMultipartFile("file", "이력서.pdf", "application/pdf", minimalPdfBytes());
@@ -236,13 +236,35 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fileName").value("이력서.pdf"));
 
-        mockMvc.perform(get("/api/auth/me/profile/file").header("Authorization", "Bearer " + token))
+        mockMvc.perform(get("/api/auth/me/profile/files").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fileName").value("이력서.pdf"))
-                .andExpect(jsonPath("$.fileType").value("application/pdf"));
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].fileName").value("이력서.pdf"))
+                .andExpect(jsonPath("$[0].fileType").value("application/pdf"));
     }
 
-    // ⑮-1 이력서 파일 저장 후 다운로드 시 원본 그대로 조회
+    // ⑮-1 이력서 파일은 최대 3개까지만 저장 가능, 초과 시 400
+    @Test
+    void uploadProfileFileExceedsLimitTest() throws Exception {
+        signUp("profile-file-limit@test.com");
+        String token = jwtUtil.generateToken("profile-file-limit@test.com");
+
+        for (int i = 0; i < 3; i++) {
+            MockMultipartFile file = new MockMultipartFile("file", "이력서" + i + ".pdf",
+                    "application/pdf", minimalPdfBytes());
+            mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(file)
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk());
+        }
+
+        MockMultipartFile fourth = new MockMultipartFile("file", "이력서4.pdf",
+                "application/pdf", minimalPdfBytes());
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(fourth)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ⑮-2 이력서 파일 저장 후 다운로드 시 원본 그대로 조회
     @Test
     void downloadProfileFileTest() throws Exception {
         signUp("profile-file-download@test.com");
@@ -250,11 +272,14 @@ class AuthControllerTest {
         byte[] pdfBytes = minimalPdfBytes();
         MockMultipartFile file = new MockMultipartFile("file", "이력서.pdf", "application/pdf", pdfBytes);
 
-        mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(file)
+        String response = mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(file)
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        Long fileId = objectMapper.readTree(response).get("id").asLong();
 
-        mockMvc.perform(get("/api/auth/me/profile/file/download").header("Authorization", "Bearer " + token))
+        mockMvc.perform(get("/api/auth/me/profile/file/" + fileId + "/download")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Content-Disposition"))
                 .andExpect(content().bytes(pdfBytes));
@@ -262,11 +287,11 @@ class AuthControllerTest {
 
     // ⑯ 저장된 파일이 없으면 다운로드 시 404
     @Test
-    void getProfileFileNotFoundTest() throws Exception {
+    void downloadProfileFileNotFoundTest() throws Exception {
         signUp("profile-file-none@test.com");
         String token = jwtUtil.generateToken("profile-file-none@test.com");
 
-        mockMvc.perform(get("/api/auth/me/profile/file").header("Authorization", "Bearer " + token))
+        mockMvc.perform(get("/api/auth/me/profile/file/999/download").header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound());
     }
 
@@ -282,21 +307,38 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ⑱ 이력서 파일 삭제 후 다운로드 시 404
+    // ⑱ 이력서 파일 개별 삭제 후 목록에서 사라짐, 다운로드 시 404
     @Test
     void deleteProfileFileTest() throws Exception {
         signUp("profile-file-delete@test.com");
         String token = jwtUtil.generateToken("profile-file-delete@test.com");
         MockMultipartFile file = new MockMultipartFile("file", "resume.pdf", "application/pdf", minimalPdfBytes());
 
-        mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(file)
+        String response = mockMvc.perform(multipart(HttpMethod.PUT, "/api/auth/me/profile/file").file(file)
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        Long fileId = objectMapper.readTree(response).get("id").asLong();
 
-        mockMvc.perform(delete("/api/auth/me/profile/file").header("Authorization", "Bearer " + token))
+        mockMvc.perform(delete("/api/auth/me/profile/file/" + fileId).header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/auth/me/profile/file").header("Authorization", "Bearer " + token))
+        mockMvc.perform(get("/api/auth/me/profile/files").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(get("/api/auth/me/profile/file/" + fileId + "/download")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    // ⑲ 존재하지 않는 이력서 파일 삭제 시 404
+    @Test
+    void deleteProfileFileNotFoundTest() throws Exception {
+        signUp("profile-file-delete-none@test.com");
+        String token = jwtUtil.generateToken("profile-file-delete-none@test.com");
+
+        mockMvc.perform(delete("/api/auth/me/profile/file/999").header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound());
     }
 }

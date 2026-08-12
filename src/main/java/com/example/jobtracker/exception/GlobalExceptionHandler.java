@@ -74,10 +74,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(ErrorResponse.of(e.getMessage()));
     }
 
-    // 이력서 URL/PDF 텍스트 추출 실패 (400)
+    // 이력서 URL/PDF 텍스트 추출 실패, 이력서 파일 개수 초과 (400)
     @ExceptionHandler(ProfileParseFailedException.class)
     public ResponseEntity<ErrorResponse> handleProfileParseFailed(ProfileParseFailedException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(e.getMessage()));
+    }
+
+    // 이력서 파일을 찾을 수 없거나 내 소유가 아님 (404)
+    @ExceptionHandler(ResumeFileNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResumeFileNotFound(ResumeFileNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(e.getMessage()));
     }
 
     // 업로드 파일이 크기 제한을 초과함 (400)
