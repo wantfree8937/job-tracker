@@ -2,6 +2,7 @@ package com.example.jobtracker.service.job;
 
 import com.example.jobtracker.dto.job.BackfillExperienceResult;
 import com.example.jobtracker.dto.job.BackfillHtmlEntitiesResult;
+import com.example.jobtracker.dto.job.CrawlResult;
 import com.example.jobtracker.dto.job.JobSearchResult;
 import com.example.jobtracker.entity.job.CollectedJob;
 import com.example.jobtracker.entity.user.User;
@@ -93,20 +94,20 @@ public class JobSearchService {
     }
 
     // keywords가 없으면 로그인 사용자의 관심 키워드로 각각 search()를 실행해 결과를 합산한다 (Render 등 파일 없는 환경에서 실제 크롤링 수행)
-    public JobSearchResult crawl(List<String> keywords, String email) {
+    public CrawlResult crawl(List<String> keywords, String email) {
         List<String> targets = resolveKeywords(keywords, email);
         if (targets.isEmpty()) {
             throw new NoKeywordsException();
         }
 
-        int collected = 0;
+        int loaded = 0;
         int skipped = 0;
         for (String keyword : targets) {
             JobSearchResult result = search(keyword);
-            collected += result.collected();
+            loaded += result.collected();
             skipped += result.skipped();
         }
-        return new JobSearchResult(String.join(",", targets), collected, skipped);
+        return new CrawlResult(loaded, skipped);
     }
 
     private List<String> resolveKeywords(List<String> keywords, String email) {
