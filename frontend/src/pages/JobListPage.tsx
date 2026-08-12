@@ -409,7 +409,13 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="회사명 또는 포지션 검색"
+                  placeholder={
+                    searchField === 'company'
+                      ? '회사명 검색'
+                      : searchField === 'title'
+                        ? '제목 검색'
+                        : '회사명 또는 포지션 검색'
+                  }
                   value={collectedKeyword}
                   onChange={(e) => setCollectedKeyword(e.target.value)}
                 />

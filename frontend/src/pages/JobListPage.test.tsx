@@ -259,7 +259,7 @@ describe('JobListPage', () => {
     const collectedCallCount = fetchMock.mock.calls.filter((call) => String(call[0]).includes('/jobs/collected')).length
 
     await user.selectOptions(screen.getByLabelText('검색 범위'), '회사명')
-    await user.type(screen.getByPlaceholderText('회사명 또는 포지션 검색'), '검색어포함직군')
+    await user.type(screen.getByPlaceholderText('회사명 검색'), '검색어포함직군')
 
     await waitFor(() => expect(screen.queryByText('검색어포함직군')).not.toBeInTheDocument())
     expect(
