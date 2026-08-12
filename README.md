@@ -77,32 +77,6 @@ job-tracker/
 └── .github/workflows/     # CI + daily-collect (매일 공고 자동 수집)
 ```
 
-## 실행 방법
-
-### 백엔드 (Spring Boot, 8080)
-
-```bash
-# 1. PostgreSQL에 DB 생성
-createdb job_tracker
-
-# 2. 환경변수 설정 (JWT 시크릿 — 32바이트 이상, DB 접속 정보)
-# Windows: setx JWT_SECRET "여기에-긴-랜덤-문자열"
-# Windows: setx DB_PASSWORD "postgres"
-
-# 3. 실행
-mvn spring-boot:run
-```
-
-### 프론트 (Vite, 5173)
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-접속: http://localhost:5173 (dev 서버가 /api를 백엔드 8080으로 프록시)
-
 ## 테스트
 
 ```bash
