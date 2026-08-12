@@ -16,6 +16,9 @@ export default function JobFormModal({ job, onClose, onSaved }: JobFormModalProp
   const [deadline, setDeadline] = useState(job?.deadline ?? '')
   const [status, setStatus] = useState<ApplicationStatus>(job?.status ?? 'WISH')
   const [memo, setMemo] = useState(job?.memo ?? '')
+  const [region, setRegion] = useState(job?.region ?? '')
+  const [experience, setExperience] = useState(job?.experience ?? '')
+  const [industry, setIndustry] = useState(job?.industry ?? '')
   const [error, setError] = useState('')
 
   const handleSubmit = async (e: FormEvent) => {
@@ -34,6 +37,9 @@ export default function JobFormModal({ job, onClose, onSaved }: JobFormModalProp
       deadline: deadline || undefined,
       status,
       memo: memo || undefined,
+      region: region || undefined,
+      experience: experience || undefined,
+      industry: industry || undefined,
     }
 
     try {
@@ -100,6 +106,23 @@ export default function JobFormModal({ job, onClose, onSaved }: JobFormModalProp
         <label>
           메모
           <textarea value={memo} onChange={(e) => setMemo(e.target.value)} />
+        </label>
+        <label>
+          지역
+          <input type="text" value={region} onChange={(e) => setRegion(e.target.value)} placeholder="서울 강남구" />
+        </label>
+        <label>
+          경력
+          <input
+            type="text"
+            value={experience}
+            onChange={(e) => setExperience(e.target.value)}
+            placeholder="신입 / 경력 3년"
+          />
+        </label>
+        <label>
+          업종
+          <input type="text" value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="IT, 컨텐츠" />
         </label>
         <div className="modal-actions">
           <button type="button" className="outline-button" onClick={onClose}>

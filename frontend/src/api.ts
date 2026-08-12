@@ -83,6 +83,9 @@ export interface JobInput {
   deadline?: string
   status?: ApplicationStatus
   memo?: string
+  region?: string
+  experience?: string
+  industry?: string
 }
 
 export function createJob(input: JobInput): Promise<JobPosting> {
