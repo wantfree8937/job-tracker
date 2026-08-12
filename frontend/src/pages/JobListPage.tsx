@@ -7,7 +7,7 @@ import KeywordsModal from '../components/KeywordsModal'
 import ConfirmModal from '../components/ConfirmModal'
 import InterviewSetupModal from '../components/InterviewSetupModal'
 import ProfileModal from '../components/ProfileModal'
-import { getJobs, getStats, updateJob, deleteJob, loadCollectedJobs, getCollectedJobs, scrapCollectedJob, me, getProfile, getProfileFile, type CollectedJobSearchField } from '../api'
+import { getJobs, getStats, updateJob, deleteJob, crawlCollected, getCollectedJobs, scrapCollectedJob, me, getProfile, getProfileFile, type CollectedJobSearchField } from '../api'
 import { ALL_STATUSES, STATUS_LABEL, type ApplicationStatus, type JobPosting, type JobStats, type CollectedJob } from '../types'
 
 // 상태별 통계 카드 이모지
@@ -232,8 +232,8 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     setCollectedError('')
     setCollectedMessage('')
     try {
-      const result = await loadCollectedJobs()
-      setCollectedMessage(`${result.loaded}건 불러왔어요`)
+      const result = await crawlCollected(keywords)
+      setCollectedMessage(result.loaded > 0 ? `${result.loaded}건 새로 가져왔어요` : '새 공고가 없어요')
       loadCollected()
     } catch (err) {
       setCollectedError(err instanceof Error ? err.message : '공고를 불러오지 못했습니다.')
@@ -253,6 +253,10 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     try {
       await scrapCollectedJob(id)
       setScrapedIds((prev) => new Set(prev).add(id))
+      setCollectedJobs((prev) => {
+        const updated = prev.map((j) => (j.id === id ? { ...j, scrapedByMe: true } : j))
+        return [...updated].sort((a, b) => Number(a.scrapedByMe) - Number(b.scrapedByMe))
+      })
       setCollectedMessage('내 공고로 가져왔어요')
     } catch (err) {
       setCollectedError(err instanceof Error ? err.message : '스크랩에 실패했습니다.')

@@ -109,6 +109,13 @@ export function loadCollectedJobs(): Promise<CollectedJobLoadResult> {
   return request('/jobs/collected/load', { method: 'POST' })
 }
 
+export function crawlCollected(keywords?: string[]): Promise<CollectedJobLoadResult> {
+  return request('/jobs/collected/crawl', {
+    method: 'POST',
+    body: JSON.stringify(keywords && keywords.length > 0 ? { keywords } : {}),
+  })
+}
+
 export type CollectedJobSearchField = 'all' | 'company' | 'title'
 
 export function getCollectedJobs(
