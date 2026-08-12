@@ -32,5 +32,8 @@ opencode-go:
   api-key: ${OPENCODE_GO_API_KEY:}
   base-url: https://opencode.ai/zen/go/v1
 
+job-tracker:
+  retention-days: 7   # 마감 후 이 일수 경과 시 수집 공고 자동 삭제
+
 server:
   port: 8080

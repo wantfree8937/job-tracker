@@ -24,6 +24,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -126,6 +127,13 @@ public class CollectedJobService {
         return jobs.stream()
                 .map(job -> CollectedJobResponse.from(job, myScrapedUrls.contains(job.getUrl())))
                 .toList();
+    }
+
+    // 마감 후 retentionDays 지난 수집 공고 삭제 (deadline null인 상시채용 공고는 제외)
+    @Transactional
+    public int deleteExpired(int retentionDays) {
+        LocalDate cutoff = LocalDate.now().minusDays(retentionDays);
+        return collectedJobRepository.deleteByDeadlineBeforeAndDeadlineIsNotNull(cutoff);
     }
 
     // 로그인 사용자가 이미 스크랩한 공고의 url 목록 (scrap 중복 검사와 동일하게 link 기준)
