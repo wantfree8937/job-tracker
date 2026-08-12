@@ -20,7 +20,7 @@
 |---|---|
 | 회원가입 / 로그인 | JWT 기반 인증 (Spring Security, BCrypt) |
 | 채용공고 자동 수집 | 원티드·잡코리아 키워드 검색으로 즉시 수집 + **매일 17시 자동 수집** (GitHub Actions 크론) |
-| 관심 분야 개인화 | 사용자별 키워드 저장 → "내 관심 공고"로 사람마다 다른 공고 제공 |
+| 관심 분야 개인화 | 사용자별 키워드 저장 → 스크랩 공고는 내 공고로 이동으로 사람마다 다른 공고 제공 |
 | 검색 필터 | 회사명 / 제목 / 전체 선택 검색 |
 | 공고 스크랩 | 전체 공고에서 스크랩 → 내 공고로 (중복 방지, 새로고침 후에도 상태 유지) |
 | 링크 자동 채우기 | 채용 링크 붙여넣기 시 회사·포지션 자동 추출 |
@@ -36,8 +36,8 @@
 ```
 백엔드:  Spring Boot 4.1 · Spring Security + JWT · Spring Data JPA · PostgreSQL
 프론트:  React 19 · Vite · TypeScript · React Router
-테스트:  JUnit + MockMvc · JaCoCo (백엔드 108개, 라인 76% / 브랜치 63%)
-         Vitest + Testing Library (프론트 47개, 라인 59.23% / 함수 48.27%)
+테스트:  JUnit + MockMvc · JaCoCo (백엔드 128개, 라인 81% / 브랜치 68%)
+         Vitest + Testing Library (프론트 72개, 라인 81.52% / 함수 66%)
          Playwright (실화면 자동 검증)
 인프라:  Docker (multi-stage) · GitHub Actions CI · Render (클라우드 배포)
 ```
@@ -117,8 +117,8 @@ npm run coverage
 
 | 영역 | 테스트 수 | 커버리지 |
 |---|---|---|
-| 백엔드 (Java) | 108개 | 라인 76% / 브랜치 63% (외부 크롤링 호출부는 의도적 제외) |
-| 프론트 (TS) | 47개 | 라인 59.23% / 함수 48.27% |
+| 백엔드 (Java) | 128개 | 라인 81% / 브랜치 68% (외부 크롤링 호출부는 의도적 제외) |
+| 프론트 (TS) | 72개 | 라인 81.52% / 함수 66% |
 
 ## CI/CD
 
