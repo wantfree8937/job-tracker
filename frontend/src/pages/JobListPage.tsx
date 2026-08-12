@@ -49,7 +49,6 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const [collectedKeyword, setCollectedKeyword] = useState('')
   const [searchField, setSearchField] = useState<CollectedJobSearchField>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('ALL')
-  const [mineOnly, setMineOnly] = useState(false)
   const [scrapedIds, setScrapedIds] = useState<Set<number>>(new Set())
   const [collectedError, setCollectedError] = useState('')
   const [collectedMessage, setCollectedMessage] = useState('')
@@ -216,9 +215,8 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
       })
     }
     if (sourceFilter !== 'ALL') list = list.filter((j) => j.source === sourceFilter)
-    if (mineOnly) list = list.filter((j) => j.scrapedByMe)
     return list
-  }, [collectedJobs, collectedKeyword, searchField, sourceFilter, mineOnly])
+  }, [collectedJobs, collectedKeyword, searchField, sourceFilter])
 
   useEffect(() => {
     setVisibleCollectedCount(30)
@@ -396,23 +394,6 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
 
         {tab === 'collected' && (
           <>
-            <div className="status-filters">
-              <button
-                type="button"
-                className={!mineOnly ? 'chip active' : 'chip'}
-                onClick={() => setMineOnly(false)}
-              >
-                전체 공고
-              </button>
-              <button
-                type="button"
-                className={mineOnly ? 'chip active' : 'chip'}
-                onClick={() => setMineOnly(true)}
-              >
-                내 관심 공고
-              </button>
-            </div>
-
             <section className="toolbar">
               <select
                 className="search-field-select"
