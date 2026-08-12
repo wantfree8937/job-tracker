@@ -125,7 +125,7 @@ describe('JobListPage', () => {
     expect(screen.getByRole('button', { name: '스크랩' })).toBeInTheDocument()
   })
 
-  it('"내 관심 공고" 토글을 클릭하면 mine=true로 수집 공고를 다시 조회한다', async () => {
+  it('"내 관심 공고" 토글을 클릭하면 서버 재조회 없이 스크랩한 공고만 걸러서 보여준다', async () => {
     const user = userEvent.setup()
 
     const fetchMock = vi.fn().mockImplementation((url: string) => {
@@ -140,7 +140,32 @@ describe('JobListPage', () => {
         })
       }
       if (url.includes('/jobs/collected')) {
-        return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => [
+            {
+              id: 1,
+              company: '스크랩함',
+              title: '스크랩한 공고',
+              url: 'https://example.com/1',
+              source: '잡코리아',
+              jobKey: '잡코리아:1',
+              createdAt: '2026-01-01T00:00:00Z',
+              scrapedByMe: true,
+            },
+            {
+              id: 2,
+              company: '스크랩안함',
+              title: '아직 안 본 공고',
+              url: 'https://example.com/2',
+              source: '원티드',
+              jobKey: '원티드:2',
+              createdAt: '2026-01-01T00:00:00Z',
+              scrapedByMe: false,
+            },
+          ],
+        })
       }
       return Promise.resolve({ ok: true, status: 200, json: async () => [] })
     })
@@ -148,13 +173,16 @@ describe('JobListPage', () => {
 
     render(<JobListPage onLogout={vi.fn()} />)
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/jobs/collected'), expect.anything()))
+    await waitFor(() => expect(screen.getByText('스크랩안함')).toBeInTheDocument())
+    const collectedCallCount = fetchMock.mock.calls.filter((call) => String(call[0]).includes('/jobs/collected')).length
 
     await user.click(screen.getByRole('button', { name: '내 관심 공고' }))
 
-    await waitFor(() =>
-      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('mine=true'), expect.anything()),
-    )
+    await waitFor(() => expect(screen.queryByText('스크랩안함')).not.toBeInTheDocument())
+    expect(screen.getByText('스크랩함')).toBeInTheDocument()
+    expect(
+      fetchMock.mock.calls.filter((call) => String(call[0]).includes('/jobs/collected')).length,
+    ).toBe(collectedCallCount)
   })
 
   it('scrapedByMe가 true인 수집 공고는 새로고침 후에도 스크랩 완료 상태로 표시된다', async () => {
@@ -257,12 +285,29 @@ describe('JobListPage', () => {
     await waitFor(() => expect(screen.getByText('정렬: 최신 수집순')).toBeInTheDocument())
   })
 
-  it('검색 범위를 "회사명"으로 바꾸면 searchField=company로 수집 공고를 조회한다', async () => {
+  it('검색 범위를 "회사명"으로 바꾸면 서버 재조회 없이 회사명 기준으로만 걸러서 보여준다', async () => {
     const user = userEvent.setup()
 
     const fetchMock = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/jobs/stats')) {
         return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+      }
+      if (url.includes('/jobs/collected')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => [
+            {
+              id: 1,
+              company: '토스',
+              title: '검색어포함직군',
+              url: 'https://example.com/1',
+              source: '잡코리아',
+              jobKey: '잡코리아:1',
+              createdAt: '2026-01-01T00:00:00Z',
+            },
+          ],
+        })
       }
       return Promise.resolve({ ok: true, status: 200, json: async () => [] })
     })
@@ -270,13 +315,16 @@ describe('JobListPage', () => {
 
     render(<JobListPage onLogout={vi.fn()} />)
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/jobs/collected'), expect.anything()))
+    await waitFor(() => expect(screen.getByText('토스')).toBeInTheDocument())
+    const collectedCallCount = fetchMock.mock.calls.filter((call) => String(call[0]).includes('/jobs/collected')).length
 
     await user.selectOptions(screen.getByLabelText('검색 범위'), '회사명')
+    await user.type(screen.getByPlaceholderText('회사명 또는 포지션 검색'), '검색어포함직군')
 
-    await waitFor(() =>
-      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('searchField=company'), expect.anything()),
-    )
+    await waitFor(() => expect(screen.queryByText('검색어포함직군')).not.toBeInTheDocument())
+    expect(
+      fetchMock.mock.calls.filter((call) => String(call[0]).includes('/jobs/collected')).length,
+    ).toBe(collectedCallCount)
   })
 
   it('삭제 버튼을 누르면 확인 모달이 뜨고, 확인해야 삭제 요청이 전송된다', async () => {

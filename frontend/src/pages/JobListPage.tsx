@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Header from '../components/Header'
 import StatusBadge from '../components/StatusBadge'
@@ -182,12 +182,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
   const loadCollected = useCallback(async () => {
     setIsCollectedLoading(true)
     try {
-      const data = await getCollectedJobs({
-        keyword: collectedKeyword || undefined,
-        source: sourceFilter === 'ALL' ? undefined : sourceFilter,
-        mine: mineOnly || undefined,
-        searchField,
-      })
+      const data = await getCollectedJobs({})
       // 스크랩한 공고는 이미 확인했으므로 목록 아래로 내린다 (createdAt DESC는 그대로 유지)
       const sorted = [...data].sort((a, b) => Number(a.scrapedByMe) - Number(b.scrapedByMe))
       setCollectedJobs(sorted)
@@ -205,15 +200,33 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     } finally {
       setIsCollectedLoading(false)
     }
-  }, [collectedKeyword, searchField, sourceFilter, mineOnly])
+  }, [])
 
   useEffect(() => {
     if (tab === 'collected') loadCollected()
   }, [tab, loadCollected])
 
+  // 검색/출처/내 공고 필터는 서버 재조회 없이 이미 받아둔 목록에서 즉시 걸러낸다
+  const filteredCollected = useMemo(() => {
+    let list = collectedJobs
+    const kw = collectedKeyword.trim().toLowerCase()
+    if (kw) {
+      list = list.filter((j) => {
+        const title = (j.title ?? '').toLowerCase()
+        const company = (j.company ?? '').toLowerCase()
+        if (searchField === 'company') return company.includes(kw)
+        if (searchField === 'title') return title.includes(kw)
+        return title.includes(kw) || company.includes(kw)
+      })
+    }
+    if (sourceFilter !== 'ALL') list = list.filter((j) => j.source === sourceFilter)
+    if (mineOnly) list = list.filter((j) => j.scrapedByMe)
+    return list
+  }, [collectedJobs, collectedKeyword, searchField, sourceFilter, mineOnly])
+
   useEffect(() => {
     setVisibleCollectedCount(30)
-  }, [collectedJobs])
+  }, [filteredCollected])
 
   const handleLoadCollected = async () => {
     setCollectedError('')
@@ -231,7 +244,7 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
     setKeywords(newKeywords)
     if (!keepOpen) setIsKeywordsModalOpen(false)
     setKeywordsMessage(message ?? '관심 분야를 저장했어요')
-    if (tab === 'collected' && (mineOnly || message)) loadCollected()
+    if (tab === 'collected' && message) loadCollected()
   }
 
   const handleScrap = async (id: number) => {
@@ -453,10 +466,10 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
             <section className="job-list">
               {isCollectedLoading && collectedJobs.length === 0 ? (
                 <div className="job-list-loading">공고를 불러오는 중...</div>
-              ) : collectedJobs.length === 0 ? (
+              ) : filteredCollected.length === 0 ? (
                 <p className="empty-message">아직 불러온 공고가 없어요 — [공고 불러오기]를 눌러 크롤링해보세요</p>
               ) : null}
-              {collectedJobs.slice(0, visibleCollectedCount).map((job) => {
+              {filteredCollected.slice(0, visibleCollectedCount).map((job) => {
                 const scraped = scrapedIds.has(job.id)
                 return (
                   <article key={job.id} className={scraped ? 'job-card job-card-scraped' : 'job-card'}>
@@ -488,13 +501,13 @@ export default function JobListPage({ onLogout }: { onLogout: () => void }) {
                   </article>
                 )
               })}
-              {visibleCollectedCount < collectedJobs.length && (
+              {visibleCollectedCount < filteredCollected.length && (
                 <button
                   type="button"
                   className="load-more-button"
                   onClick={() => setVisibleCollectedCount((c) => c + 30)}
                 >
-                  더보기 ({visibleCollectedCount} / {collectedJobs.length})
+                  더보기 ({visibleCollectedCount} / {filteredCollected.length})
                 </button>
               )}
             </section>
