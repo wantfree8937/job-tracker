@@ -105,10 +105,6 @@ export interface CollectedJobLoadResult {
   skipped: number
 }
 
-export function loadCollectedJobs(): Promise<CollectedJobLoadResult> {
-  return request('/jobs/collected/load', { method: 'POST' })
-}
-
 export function crawlCollected(keywords?: string[]): Promise<CollectedJobLoadResult> {
   return request('/jobs/collected/crawl', {
     method: 'POST',
