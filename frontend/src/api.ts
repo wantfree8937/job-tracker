@@ -182,6 +182,7 @@ export function saveProfile(profileText: string): Promise<ProfileResponse> {
 }
 
 export interface ProfileFileResponse {
+  id: number
   fileName: string | null
   fileType: string | null
   text?: string | null
@@ -193,18 +194,18 @@ export function saveProfileFile(file: File): Promise<ProfileFileResponse> {
   return request('/auth/me/profile/file', { method: 'PUT', body: formData })
 }
 
-export async function getProfileFile(): Promise<ProfileFileResponse | null> {
+export async function getProfileFiles(): Promise<ProfileFileResponse[]> {
   const token = localStorage.getItem('accessToken')
-  const res = await fetch(`${BASE_URL}/auth/me/profile/file`, {
+  const res = await fetch(`${BASE_URL}/auth/me/profile/files`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
-  if (res.status === 404) return null // 파일 없음 = 정상
+  if (res.status === 404) return [] // 파일 없음 = 정상
   if (!res.ok) {
     throw new Error('이력서 파일을 불러오지 못했습니다.')
   }
   return res.json()
 }
 
-export function deleteProfileFile(): Promise<void> {
-  return request('/auth/me/profile/file', { method: 'DELETE' })
+export function deleteProfileFile(fileId: number): Promise<void> {
+  return request(`/auth/me/profile/file/${fileId}`, { method: 'DELETE' })
 }

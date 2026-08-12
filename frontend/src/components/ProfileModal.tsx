@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { saveProfile, saveProfileFile, deleteProfileFile } from '../api'
 import type { ProfileFileResponse } from '../api'
 
+const MAX_FILES = 3
+
 interface ProfileModalProps {
   open: boolean
   onClose: () => void
   initialProfileText: string
-  initialHasFile: boolean
-  initialFileName: string | null
+  initialFiles: ProfileFileResponse[]
   onProfileSaved: (profileText: string) => void
-  onFileSaved: (fileName: string | null) => void
+  onFilesChanged: (files: ProfileFileResponse[]) => void
 }
 
 const MAX_LENGTH = 5000
@@ -21,10 +22,9 @@ export default function ProfileModal({
   open,
   onClose,
   initialProfileText,
-  initialHasFile,
-  initialFileName,
+  initialFiles,
   onProfileSaved,
-  onFileSaved,
+  onFilesChanged,
 }: ProfileModalProps) {
   const [tab, setTab] = useState<ProfileTab>('text')
   const [profileText, setProfileText] = useState(initialProfileText)
@@ -34,9 +34,7 @@ export default function ProfileModal({
   const [message, setMessage] = useState('')
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [savedFile, setSavedFile] = useState<ProfileFileResponse | null>(
-    initialHasFile ? { fileName: initialFileName, fileType: null } : null,
-  )
+  const [savedFiles, setSavedFiles] = useState<ProfileFileResponse[]>(initialFiles)
 
   useEffect(() => {
     if (!open) return
@@ -72,10 +70,11 @@ export default function ProfileModal({
     setIsParsing(true)
     try {
       const res = await saveProfileFile(pdfFile)
-      setSavedFile(res)
+      const next = [...savedFiles, res]
+      setSavedFiles(next)
       setPdfFile(null)
-      setMessage('파일이 저장되었어요')
-      onFileSaved(res.fileName)
+      setMessage(`파일이 저장되었어요 (${next.length}/${MAX_FILES})`)
+      onFilesChanged(next)
     } catch (err) {
       setError(err instanceof Error ? err.message : '파일을 저장할 수 없어요.')
     } finally {
@@ -83,18 +82,18 @@ export default function ProfileModal({
     }
   }
 
-  const handleDownloadFile = async () => {
+  const handleDownloadFile = async (file: ProfileFileResponse) => {
     setError('')
     try {
       const token = localStorage.getItem('accessToken')
-      const res = await fetch('/api/auth/me/profile/file/download', {
+      const res = await fetch(`/api/auth/me/profile/file/${file.id}/download`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       })
       if (!res.ok) throw new Error('파일을 다운로드할 수 없어요.')
       const blob = await res.blob()
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
-      link.download = savedFile?.fileName ?? 'resume'
+      link.download = file.fileName ?? 'resume'
       link.click()
       URL.revokeObjectURL(link.href)
     } catch (err) {
@@ -102,13 +101,14 @@ export default function ProfileModal({
     }
   }
 
-  const handleDeleteFile = async () => {
+  const handleDeleteFile = async (fileId: number) => {
     setError('')
     setMessage('')
     try {
-      await deleteProfileFile()
-      setSavedFile(null)
-      onFileSaved(null)
+      await deleteProfileFile(fileId)
+      const next = savedFiles.filter((f) => f.id !== fileId)
+      setSavedFiles(next)
+      onFilesChanged(next)
     } catch (err) {
       setError(err instanceof Error ? err.message : '파일을 삭제할 수 없어요.')
     }
@@ -132,16 +132,20 @@ export default function ProfileModal({
 
         {tab === 'pdf' && (
           <div>
-            {savedFile && (
-              <div className="saved-file-row">
-                <span className="saved-file-name">{savedFile.fileName}</span>
-                <button type="button" className="outline-button" onClick={handleDownloadFile}>
-                  다운로드
-                </button>
-                <button type="button" className="outline-button" onClick={handleDeleteFile}>
-                  삭제
-                </button>
-              </div>
+            {savedFiles.length > 0 ? (
+              savedFiles.map((file) => (
+                <div key={file.id} className="saved-file-row">
+                  <span className="saved-file-name">{file.fileName}</span>
+                  <button type="button" className="outline-button" onClick={() => handleDownloadFile(file)}>
+                    다운로드
+                  </button>
+                  <button type="button" className="outline-button" onClick={() => handleDeleteFile(file.id)}>
+                    삭제
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="modal-section-label">저장된 파일이 없어요</p>
             )}
             <label
               className={isDragging ? 'drop-zone dragging' : 'drop-zone'}
@@ -168,8 +172,13 @@ export default function ProfileModal({
               <span className="drop-zone-hint">PDF · PPT · PPTX (최대 10MB)</span>
             </label>
             <div className="modal-actions">
-              <button type="button" className="outline-button" onClick={handleUploadFile} disabled={isParsing || !pdfFile}>
-                {isParsing ? '업로드 중...' : '업로드/저장'}
+              <button
+                type="button"
+                className="outline-button"
+                onClick={handleUploadFile}
+                disabled={isParsing || !pdfFile || savedFiles.length >= MAX_FILES}
+              >
+                {isParsing ? '업로드 중...' : `업로드/저장 (${savedFiles.length}/${MAX_FILES})`}
               </button>
             </div>
           </div>
