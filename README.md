@@ -6,6 +6,14 @@
 > 공고를 어디에 지원했는지, 지금 면접 단계인지, 어떤 회사가 합격했는지 기억하기 어려워서,
 > 지원 상태를 직접 관리할 수 있는 서비스가 있으면 좋겠다고 생각했습니다.
 
+## 화면 소개
+
+| | |
+|---|---|
+| ![로그인](docs/screenshots/login-v2.png) | ![전체 공고](docs/screenshots/collected-v3.png) |
+| ![내 공고](docs/screenshots/mine-v3.png) | ![AI 면접 질문](docs/screenshots/interview-v2.png) |
+| ![내 이력서](docs/screenshots/resume-v2.png) | |
+
 ## 주요 기능
 
 | 기능 | 설명 |
