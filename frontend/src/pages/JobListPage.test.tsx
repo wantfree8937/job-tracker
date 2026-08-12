@@ -365,4 +365,265 @@ describe('JobListPage', () => {
       ),
     )
   })
+
+  it('스크랩 버튼을 누르면 스크랩 완료로 바뀌고 성공 메시지를 보여준다', async () => {
+    const user = userEvent.setup()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/jobs/stats')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+        }
+        if (url.match(/\/jobs\/collected\/1\/scrap$/) && options?.method === 'POST') {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ id: 1 }) })
+        }
+        if (url.includes('/jobs/collected')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => [
+              {
+                id: 1,
+                company: '토스',
+                title: '백엔드 개발자',
+                url: 'https://example.com/1',
+                source: '잡코리아',
+                jobKey: '잡코리아:1',
+                createdAt: '2026-01-01T00:00:00Z',
+              },
+            ],
+          })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+      }),
+    )
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await user.click(await screen.findByRole('button', { name: '스크랩' }))
+
+    expect(await screen.findByText('내 공고로 가져왔어요')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '✓ 스크랩 완료' })).toBeDisabled()
+  })
+
+  it('공고 불러오기를 누르면 새로 가져온 건수를 안내한다', async () => {
+    const user = userEvent.setup()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/stats')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+        }
+        if (url.includes('/jobs/collected/crawl')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ loaded: 5 }) })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+      }),
+    )
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: '공고 불러오기' }))
+
+    expect(await screen.findByText('5건 새로 가져왔어요')).toBeInTheDocument()
+  })
+
+  it('공고 불러오기 실패 시 에러 메시지를 보여준다', async () => {
+    const user = userEvent.setup()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/stats')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+        }
+        if (url.includes('/jobs/collected/crawl')) {
+          return Promise.resolve({ ok: false, status: 500, json: async () => ({ message: '공고를 불러오지 못했습니다.' }) })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+      }),
+    )
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: '공고 불러오기' }))
+
+    expect(await screen.findByText('공고를 불러오지 못했습니다.')).toBeInTheDocument()
+  })
+
+  it('내 공고가 없으면 안내 문구를 보여준다', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/stats')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await user.click(screen.getAllByRole('button', { name: '내 공고' })[0])
+
+    expect(
+      await screen.findByText('아직 등록한 공고가 없어요 — [+ 공고 추가] 버튼으로 시작해보세요'),
+    ).toBeInTheDocument()
+  })
+
+  it('상태 select를 바꾸면 상태 변경 요청을 보내고 목록을 새로고침한다', async () => {
+    const user = userEvent.setup()
+
+    const fetchMock = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+      if (url.includes('/jobs/stats')) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+      }
+      if (url.match(/\/jobs\/1$/) && options?.method === 'PATCH') {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({ ...jobA, status: 'APPLIED' }) })
+      }
+      return Promise.resolve({ ok: true, status: 200, json: async () => [jobA] })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await user.click(screen.getAllByRole('button', { name: '내 공고' })[0])
+    await waitFor(() => expect(screen.getByText('카카오')).toBeInTheDocument())
+
+    await user.selectOptions(screen.getByDisplayValue('지원 예정'), '지원함')
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/jobs/1'),
+        expect.objectContaining({ method: 'PATCH' }),
+      ),
+    )
+  })
+
+  it('수정 버튼을 누르면 기존 공고 정보로 수정 모달이 열린다', async () => {
+    const user = userEvent.setup()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/stats')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => [jobA] })
+      }),
+    )
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await user.click(screen.getAllByRole('button', { name: '내 공고' })[0])
+    await waitFor(() => expect(screen.getByText('카카오')).toBeInTheDocument())
+
+    await user.click(screen.getByRole('button', { name: '수정' }))
+
+    expect(screen.getByText('공고 수정')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('카카오')).toBeInTheDocument()
+  })
+
+  it('출처 필터 칩을 클릭하면 서버 재조회 없이 해당 출처만 걸러서 보여준다', async () => {
+    const user = userEvent.setup()
+
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/jobs/stats')) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+      }
+      if (url.includes('/jobs/collected')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => [
+            {
+              id: 1,
+              company: '잡코리아공고',
+              title: '백엔드',
+              url: 'https://example.com/1',
+              source: '잡코리아',
+              jobKey: '잡코리아:1',
+              createdAt: '2026-01-01T00:00:00Z',
+            },
+            {
+              id: 2,
+              company: '원티드공고',
+              title: '프론트엔드',
+              url: 'https://example.com/2',
+              source: '원티드',
+              jobKey: '원티드:2',
+              createdAt: '2026-01-01T00:00:00Z',
+            },
+          ],
+        })
+      }
+      return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await waitFor(() => expect(screen.getByText('원티드공고')).toBeInTheDocument())
+    const collectedCallCount = fetchMock.mock.calls.filter((call) => String(call[0]).includes('/jobs/collected')).length
+
+    await user.click(screen.getByRole('button', { name: '원티드' }))
+
+    await waitFor(() => expect(screen.queryByText('잡코리아공고')).not.toBeInTheDocument())
+    expect(screen.getByText('원티드공고')).toBeInTheDocument()
+    expect(
+      fetchMock.mock.calls.filter((call) => String(call[0]).includes('/jobs/collected')).length,
+    ).toBe(collectedCallCount)
+  })
+
+  it('불러온 공고가 없으면 안내 문구를 보여준다', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/stats')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+      }),
+    )
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    expect(
+      await screen.findByText('아직 불러온 공고가 없어요 — [공고 불러오기]를 눌러 크롤링해보세요'),
+    ).toBeInTheDocument()
+  })
+
+  it('공고가 30개 넘으면 더보기 버튼으로 추가 공고를 보여준다', async () => {
+    const user = userEvent.setup()
+    const manyJobs: JobPosting[] = Array.from({ length: 35 }, (_, i) => ({
+      id: i + 1,
+      companyName: `회사${i + 1}`,
+      position: '백엔드 개발자',
+      status: 'WISH',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+    }))
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/jobs/stats')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({}) })
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => manyJobs })
+      }),
+    )
+
+    render(<JobListPage onLogout={vi.fn()} />)
+
+    await user.click(screen.getAllByRole('button', { name: '내 공고' })[0])
+
+    const loadMoreButton = await screen.findByRole('button', { name: '더보기 (30 / 35)' })
+    await user.click(loadMoreButton)
+
+    expect(screen.getByText('회사35')).toBeInTheDocument()
+  })
 })
