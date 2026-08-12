@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /** 외부 크롤러가 수집한 채용 공고 (모든 사용자 공유) = collected_jobs 테이블과 매핑 */
@@ -44,4 +45,7 @@ public class CollectedJob {
 
     // 업종 (예: "IT, 컨텐츠") — 출처에 없으면 null
     private String industry;
+
+    // 마감일 — 상시채용/채용시까지 등 없으면 null
+    private LocalDate deadline;
 }

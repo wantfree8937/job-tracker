@@ -16,7 +16,8 @@ public record CollectedJobResponse(
         boolean scrapedByMe,
         String region,
         String experience,
-        String industry
+        String industry,
+        String deadline
 ) {
     public static CollectedJobResponse from(CollectedJob job, boolean scrapedByMe) {
         return new CollectedJobResponse(
@@ -30,7 +31,8 @@ public record CollectedJobResponse(
                 scrapedByMe,
                 job.getRegion(),
                 job.getExperience(),
-                job.getIndustry()
+                job.getIndustry(),
+                job.getDeadline() == null ? null : job.getDeadline().toString()
         );
     }
 }

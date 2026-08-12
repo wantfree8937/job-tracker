@@ -239,6 +239,49 @@ class JobSearchServiceTest {
     }
 
     @Test
+    void 원티드_JSON에서_마감일을_추출한다() {
+        String json = """
+                {"data":[
+                    {"id":1,"position":"백엔드 개발자","company":{"name":"A"},"due_time":"2026-08-31"},
+                    {"id":2,"position":"프론트엔드 개발자","company":{"name":"B"},"due_time":null},
+                    {"id":3,"position":"디자이너","company":{"name":"C"}}
+                ]}
+                """;
+
+        List<CollectedJob> jobs = JobSearchService.parseWanted(json);
+
+        assertThat(jobs.get(0).getDeadline()).isEqualTo(java.time.LocalDate.of(2026, 8, 31));
+        assertThat(jobs.get(1).getDeadline()).isNull();
+        assertThat(jobs.get(2).getDeadline()).isNull();
+    }
+
+    @Test
+    void 잡코리아_HTML에서_마감일을_추출한다() {
+        String html = """
+                <div>목록 시작</div>
+                <div data-sentry-component="CardJob">
+                    <a href="/Recruit/GI_Read/22222?Oem_Code=1">
+                        <span class="text-typo-b1-18 text-gray900">백엔드 개발자</span>
+                    </a>
+                    <img alt="테크컴퍼니 로고" src="/logo6.png">
+                    <meta name="description" content="테크컴퍼니 채용 마감일 : 2026.10.09 백엔드 개발자">
+                </div>
+                <div data-sentry-component="CardJob">
+                    <a href="/Recruit/GI_Read/33333?Oem_Code=1">
+                        <span class="text-typo-b1-18 text-gray900">프론트엔드 개발자</span>
+                    </a>
+                    <img alt="스타트업 로고" src="/logo7.png">
+                    <meta name="description" content="스타트업 채용 마감일 : 채용시까지 프론트엔드 개발자">
+                </div>
+                """;
+
+        List<CollectedJob> jobs = JobSearchService.parseJobKorea(html);
+
+        assertThat(jobs.get(0).getDeadline()).isEqualTo(java.time.LocalDate.of(2026, 10, 9));
+        assertThat(jobs.get(1).getDeadline()).isNull();
+    }
+
+    @Test
     void 잡코리아_칩이_1개뿐이면_업종은_null이다() {
         String html = """
                 <div>목록 시작</div>

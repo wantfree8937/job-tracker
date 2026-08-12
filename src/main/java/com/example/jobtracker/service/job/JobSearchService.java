@@ -20,6 +20,8 @@ import tools.jackson.databind.JsonNode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,6 +50,9 @@ public class JobSearchService {
             Pattern.compile("경력무관|신입|시니어|주니어|미들|\\d+년 이상|\\d+년차|경력 \\d+년|\\d+~\\d+년");
     // GrayChip 텍스트 (지역/업종/연봉 칩들) — 2번째 칩이 쉼표 구분 업종 리스트
     private static final Pattern JOBKOREA_CHIP = Pattern.compile("text-typo-b4-14\">([^<]+)</span>");
+    // meta description 내 "마감일 : 2026.10.09" — "채용시까지" 등 날짜가 아니면 매칭되지 않음
+    private static final Pattern JOBKOREA_DEADLINE = Pattern.compile("마감일\\s*[:：]\\s*([0-9]{4}\\.[0-9]{2}\\.[0-9]{2})");
+    private static final DateTimeFormatter JOBKOREA_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
 
     private final CollectedJobRepository collectedJobRepository;
     private final UserRepository userRepository;
@@ -189,9 +194,24 @@ public class JobSearchService {
                 job.setExperience(experienceMatcher.group());
             }
 
+            String dueTime = item.path("due_time").asText("");
+            if (!dueTime.isBlank()) {
+                job.setDeadline(parseWantedDueTime(dueTime));
+            }
+
             jobs.add(job);
         }
         return jobs;
+    }
+
+    // due_time은 보통 "2026-08-31" ISO 날짜지만, 시간이 붙어오면(예: "2026-08-31T00:00:00") 앞 10자로 잘라 파싱한다
+    private static LocalDate parseWantedDueTime(String dueTime) {
+        String datePart = dueTime.length() >= 10 ? dueTime.substring(0, 10) : dueTime;
+        try {
+            return LocalDate.parse(datePart);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // 잡코리아 결과가 페이지당 21~22건이라 1페이지만으로는 후순위 공고가 유실됨 (실측: '네트워크' 검색 시 3페이지 소재 공고 누락)
@@ -258,6 +278,15 @@ public class JobSearchService {
                 if (chipIndex == 2) {
                     job.setIndustry(chipMatcher.group(1).split(",")[0].trim());
                     break;
+                }
+            }
+
+            Matcher deadlineMatcher = JOBKOREA_DEADLINE.matcher(card);
+            if (deadlineMatcher.find()) {
+                try {
+                    job.setDeadline(LocalDate.parse(deadlineMatcher.group(1), JOBKOREA_DATE_FORMAT));
+                } catch (Exception e) {
+                    // 존재하지 않는 날짜(예: 13월)면 무시하고 null로 둔다
                 }
             }
 
