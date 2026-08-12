@@ -35,9 +35,9 @@
 
 | | |
 |---|---|
-| ![로그인](docs/screenshots/login.png) | ![전체 공고](docs/screenshots/collected.png) |
-| ![내 공고](docs/screenshots/mine.png) | ![AI 면접 질문](docs/screenshots/interview.png) |
-| ![내 이력서](docs/screenshots/resume.png) | |
+| ![로그인](docs/screenshots/login-v2.png) | ![전체 공고](docs/screenshots/collected-v2.png) |
+| ![내 공고](docs/screenshots/mine-v2.png) | ![AI 면접 질문](docs/screenshots/interview-v2.png) |
+| ![내 이력서](docs/screenshots/resume-v2.png) | |
 
 ## 기술 스택
 
