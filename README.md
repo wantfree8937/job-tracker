@@ -31,6 +31,14 @@
 | 이력서 관리 | 텍스트 입력 + PDF/PPT/PPTX 업로드(최대 3개), 목록 조회·개별 삭제 |
 | AI 예상 면접 질문 | 질문 유형(기술 / 지원동기·인성 / 혼합), 난이도(신입~어려움) 선택, 공고 선택(선택 사항), 이력서 최대 3개 다중 참고(usedResume으로 반영 여부 표시), 공고 URL 입력 시 실시간 크롤링으로 자격요건·주요업무 반영 |
 
+## 화면 소개
+
+| | |
+|---|---|
+| ![로그인](docs/screenshots/login.png) | ![전체 공고](docs/screenshots/collected.png) |
+| ![내 공고](docs/screenshots/mine.png) | ![AI 면접 질문](docs/screenshots/interview.png) |
+| ![내 이력서](docs/screenshots/resume.png) | |
+
 ## 기술 스택
 
 ```
