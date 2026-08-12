@@ -26,14 +26,18 @@
 | 링크 자동 채우기 | 채용 링크 붙여넣기 시 회사·포지션 자동 추출 |
 | 지원 상태 관리 | 지원 예정 → 지원함 → 면접 → 합격 / 불합격 (상태 변경) |
 | 통계 대시보드 | 상태별 지원 현황 한눈에 보기 |
+| 공고 정보 확장 | 지역 / 경력 / 업종 입력·표시 |
+| 전체 공고 검색·마감일 | 프론트 즉시 필터 검색 + 마감일 표시 + 더보기 페이지네이션 |
+| 이력서 관리 | 텍스트 입력 + PDF/PPT/PPTX 업로드(최대 3개), 목록 조회·개별 삭제 |
+| AI 예상 면접 질문 | 질문 유형(기술 / 지원동기·인성 / 혼합), 난이도(신입~어려움) 선택, 공고 선택(선택 사항), 이력서 최대 3개 다중 참고(usedResume으로 반영 여부 표시), 공고 URL 입력 시 실시간 크롤링으로 자격요건·주요업무 반영 |
 
 ## 기술 스택
 
 ```
 백엔드:  Spring Boot 4.1 · Spring Security + JWT · Spring Data JPA · PostgreSQL
 프론트:  React 19 · Vite · TypeScript · React Router
-테스트:  JUnit + MockMvc · JaCoCo (백엔드 커버리지 97%)
-         Vitest + Testing Library (프론트 커버리지 73%)
+테스트:  JUnit + MockMvc · JaCoCo (백엔드 108개, 라인 76% / 브랜치 63%)
+         Vitest + Testing Library (프론트 47개, 라인 59.23% / 함수 48.27%)
          Playwright (실화면 자동 검증)
 인프라:  Docker (multi-stage) · GitHub Actions CI · Render (클라우드 배포)
 ```
@@ -51,6 +55,7 @@
   - 헬스체크: /api/health (배포 성공 판정용)
   - 매일 17시 GitHub Actions 크론이 채용공고 자동 수집
     (무료 티어 스핀다운 때문에 서버 내부 스케줄러 대신 외부 크론 사용)
+  - 크롤링 트랜잭션 분리 + HikariCP 커넥션풀 설정 보강으로 크롤링 중 500 에러 방지
 ```
 
 ## 프로젝트 구조
@@ -112,8 +117,8 @@ npm run coverage
 
 | 영역 | 테스트 수 | 커버리지 |
 |---|---|---|
-| 백엔드 (Java) | 64개 | 라인 84% (외부 크롤링 호출부는 의도적 제외) |
-| 프론트 (TS) | 42개 | 라인 74% |
+| 백엔드 (Java) | 108개 | 라인 76% / 브랜치 63% (외부 크롤링 호출부는 의도적 제외) |
+| 프론트 (TS) | 47개 | 라인 59.23% / 함수 48.27% |
 
 ## CI/CD
 
@@ -138,6 +143,12 @@ npm run coverage
 | GET | /api/jobs/collect/keywords | 전체 사용자 키워드 합집합 (크론용) |
 | GET | /api/jobs/collected | 수집 공고 목록 (?source=&keyword=&mine=&searchField=) |
 | POST | /api/jobs/collected/{id}/scrap | 공고 스크랩 → 내 공고로 |
+| POST | /api/jobs/collected/crawl | 관심 키워드 크롤링 + 기존 공고 마감일 갱신 |
+| GET | /api/auth/me/profile/files | 이력서 파일 목록 (최대 3개) |
+| PUT | /api/auth/me/profile/file | 이력서 파일 업로드 (PDF/PPT/PPTX) |
+| GET | /api/auth/me/profile/file/{fileId}/download | 이력서 파일 다운로드 |
+| DELETE | /api/auth/me/profile/file/{fileId} | 이력서 파일 삭제 |
+| POST | /api/ai/interview/questions | AI 예상 면접 질문 생성 (유형/난이도/공고/이력서 반영) |
 
 ## 보안
 
