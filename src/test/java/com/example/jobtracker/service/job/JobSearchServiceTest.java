@@ -225,6 +225,37 @@ class JobSearchServiceTest {
     }
 
     @Test
+    void 기존_공고에_빈_마감일이_있으면_새로_수집한_마감일로_채운다() {
+        CollectedJob existing = job("백엔드 개발자", "테크컴퍼니");
+        existing.setJobKey("잡코리아:12345");
+
+        CollectedJob incoming = job("백엔드 개발자", "테크컴퍼니");
+        incoming.setJobKey("잡코리아:12345");
+        incoming.setDeadline(java.time.LocalDate.of(2026, 10, 9));
+
+        boolean updated = JobSearchService.fillBlankFields(existing, incoming);
+
+        assertThat(updated).isTrue();
+        assertThat(existing.getDeadline()).isEqualTo(java.time.LocalDate.of(2026, 10, 9));
+    }
+
+    @Test
+    void 기존_공고에_이미_마감일이_있으면_덮어쓰지_않는다() {
+        CollectedJob existing = job("백엔드 개발자", "테크컴퍼니");
+        existing.setJobKey("잡코리아:12345");
+        existing.setDeadline(java.time.LocalDate.of(2026, 8, 31));
+
+        CollectedJob incoming = job("백엔드 개발자", "테크컴퍼니");
+        incoming.setJobKey("잡코리아:12345");
+        incoming.setDeadline(java.time.LocalDate.of(2026, 10, 9));
+
+        boolean updated = JobSearchService.fillBlankFields(existing, incoming);
+
+        assertThat(updated).isFalse();
+        assertThat(existing.getDeadline()).isEqualTo(java.time.LocalDate.of(2026, 8, 31));
+    }
+
+    @Test
     void 제목에서_경력_패턴을_추출해_백필한다() {
         String experience = JobSearchService.extractExperienceFromTitle("백엔드 개발자 (3년 이상)");
 

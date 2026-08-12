@@ -62,6 +62,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(ErrorResponse.of(e.getMessage()));
     }
 
+    // 크롤링할 키워드가 없음 (400)
+    @ExceptionHandler(NoKeywordsException.class)
+    public ResponseEntity<ErrorResponse> handleNoKeywords(NoKeywordsException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(e.getMessage()));
+    }
+
     // 딥시크 API 호출/응답 파싱 실패 (502)
     @ExceptionHandler(AiRequestFailedException.class)
     public ResponseEntity<ErrorResponse> handleAiRequestFailed(AiRequestFailedException e) {

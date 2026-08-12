@@ -447,6 +447,14 @@ class CollectedJobControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ⑫-1 크롤링: 요청 키워드도 없고 관심 키워드도 없으면 400
+    @Test
+    void crawlWithoutKeywordsTest() throws Exception {
+        String token = signUpAndLogin("crawl-no-keywords@test.com");
+        mockMvc.perform(post("/api/jobs/collected/crawl").header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+    }
+
     // ⑬ 크롤러용 키워드 조회: 인증 없이 200, 두 사용자가 같은 키워드를 등록해도 한 번만 반환 (중복 제거)
     @Test
     void keywordsListDeduplicatedAndPublicTest() throws Exception {

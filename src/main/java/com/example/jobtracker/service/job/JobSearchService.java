@@ -5,7 +5,9 @@ import com.example.jobtracker.dto.job.BackfillHtmlEntitiesResult;
 import com.example.jobtracker.dto.job.JobSearchResult;
 import com.example.jobtracker.entity.job.CollectedJob;
 import com.example.jobtracker.entity.user.User;
+import com.example.jobtracker.exception.InvalidCredentialsException;
 import com.example.jobtracker.exception.JobSearchFailedException;
+import com.example.jobtracker.exception.NoKeywordsException;
 import com.example.jobtracker.repository.job.CollectedJobRepository;
 import com.example.jobtracker.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -90,7 +92,39 @@ public class JobSearchService {
         return collectedJobService.saveMatchedJobs(keyword, matched, filteredOut);
     }
 
-    // existing의 region/experience/industry가 비어있고 incoming에 값이 있으면 채운다. 갱신 여부를 반환
+    // keywords가 없으면 로그인 사용자의 관심 키워드로 각각 search()를 실행해 결과를 합산한다 (Render 등 파일 없는 환경에서 실제 크롤링 수행)
+    public JobSearchResult crawl(List<String> keywords, String email) {
+        List<String> targets = resolveKeywords(keywords, email);
+        if (targets.isEmpty()) {
+            throw new NoKeywordsException();
+        }
+
+        int collected = 0;
+        int skipped = 0;
+        for (String keyword : targets) {
+            JobSearchResult result = search(keyword);
+            collected += result.collected();
+            skipped += result.skipped();
+        }
+        return new JobSearchResult(String.join(",", targets), collected, skipped);
+    }
+
+    private List<String> resolveKeywords(List<String> keywords, String email) {
+        if (keywords != null && !keywords.isEmpty()) {
+            return keywords;
+        }
+        User user = userRepository.findByEmail(email).orElseThrow(InvalidCredentialsException::new);
+        String stored = user.getKeywords();
+        if (stored == null || stored.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(stored.split(","))
+                .map(String::trim)
+                .filter(k -> !k.isEmpty())
+                .toList();
+    }
+
+    // existing의 region/experience/industry/deadline이 비어있고 incoming에 값이 있으면 채운다. 갱신 여부를 반환
     static boolean fillBlankFields(CollectedJob existing, CollectedJob incoming) {
         boolean updated = false;
         if (isBlank(existing.getRegion()) && incoming.getRegion() != null) {
@@ -103,6 +137,10 @@ public class JobSearchService {
         }
         if (isBlank(existing.getIndustry()) && incoming.getIndustry() != null) {
             existing.setIndustry(incoming.getIndustry());
+            updated = true;
+        }
+        if (existing.getDeadline() == null && incoming.getDeadline() != null) {
+            existing.setDeadline(incoming.getDeadline());
             updated = true;
         }
         return updated;

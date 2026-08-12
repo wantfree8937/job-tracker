@@ -55,6 +55,14 @@ public class CollectedJobController {
         return ResponseEntity.ok(jobSearchService.search(request.keyword()));
     }
 
+    // 요청 키워드(없으면 로그인 사용자의 관심 키워드)로 실제 크롤링을 수행한다 — Render 등 파일이 없는 환경에서 loadFromFile() 대체
+    @PostMapping("/collected/crawl")
+    public ResponseEntity<JobSearchResult> crawl(Authentication authentication,
+                                                   @RequestBody(required = false) CrawlRequest request) {
+        List<String> keywords = request == null ? null : request.keywords();
+        return ResponseEntity.ok(jobSearchService.crawl(keywords, authentication.getName()));
+    }
+
     // 모든 사용자의 관심 키워드 목록 (중복 제거) — 크롤러가 매일 자동 수집 시 조회
     @GetMapping("/collect/keywords")
     public ResponseEntity<List<String>> keywords() {
